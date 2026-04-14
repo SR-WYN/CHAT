@@ -3,26 +3,31 @@ project(CHAT LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOUIC ON) # 建议加上，处理 .ui 文件
+set(CMAKE_AUTOMOC ON) # 建议加上，处理 Qt 信号槽
 set(CMAKE_AUTORCC ON)
 
-# 1. 寻找包
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
-find_package(Boost REQUIRED)
+# --- 1. 寻找包 ---
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network)
+# Beast 依赖 system，如果用到多线程可能还需要 thread
+find_package(Boost REQUIRED COMPONENTS system) 
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
 find_package(jsoncpp REQUIRED)
 
 qt_standard_project_setup()
 
-# --- 2. 自动处理辅助文件 (非 CPP 部分) ---
-# 自动搜集头文件和 UI 文件（这些通常不需要手动精确控制）
+# --- 2. 处理辅助文件 ---
 file(GLOB_RECURSE UI_FILES "*.ui")
 file(GLOB_RECURSE HEADERS "*.h" "*.hpp")
 
-# --- 3. 自动编译 Proto ---
+# --- 3. 自动编译 Proto (更通用的写法) ---
 set(PROTO_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
 set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
+
+# 自动获取 grpc_cpp_plugin 的位置，不要硬编码 /usr/bin
+get_target_property(GRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin LOCATION)
 
 set(PROTO_FILE "${PROTO_SRC_DIR}/chat.proto")
 set(PROTO_GEN_FILES
@@ -37,43 +42,46 @@ add_custom_command(
     COMMAND ${Protobuf_PROTOC_EXECUTABLE}
     ARGS --cpp_out=${PROTO_GEN_DIR}
          --grpc_out=${PROTO_GEN_DIR}
-         --plugin=protoc-gen-grpc=/usr/bin/grpc_cpp_plugin
+         --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
          -I ${PROTO_SRC_DIR}
          ${PROTO_FILE}
     DEPENDS ${PROTO_FILE}
 )
 
-# --- 4. 手动管理 CPP 源文件 ---
-# 这里是你唯一需要手动维护的地方
+# --- 4. 源文件 ---
 set(CPP_SOURCES
     main.cpp
     mainwindow.cpp
     LoginDialog.cpp
     RegisterDialog.cpp
     global.cpp
-    # 以后新加的类，只需把 .cpp 往这丢即可
+    HttpMgr.cpp
+    # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
-# --- 5. 构建可执行文件 ---
+# --- 5. 构建 ---
 qt_add_executable(CHAT
-    WIN32 MACOSX_BUNDLE
-    ${CPP_SOURCES}      # 手动控制的核心逻辑
-    ${HEADERS}          # 自动扫描的头文件
-    ${UI_FILES}         # 自动扫描的界面文件
-    ${PROTO_GEN_FILES}   # 自动生成的代码
-    resources.qrc          # 资源文件
+    ${CPP_SOURCES}
+    ${HEADERS}
+    ${UI_FILES}
+    ${PROTO_GEN_FILES}
+    resources.qrc
 )
 
 # --- 6. 链接与配置 ---
-target_include_directories(CHAT PRIVATE ${PROTO_GEN_DIR})
+# 必须把生成的目录加入包含路径，否则代码里 #include "chat.pb.h" 会报错
+target_include_directories(CHAT PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROTO_GEN_DIR}
+)
 
 target_link_libraries(CHAT
     PRIVATE
-        Qt::Core
-        Qt::Widgets
-        Boost::boost
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Network
+        Boost::system        # 建议链接 system
         protobuf::libprotobuf
-        gRPC::grpc
-        gRPC::grpc++
-        jsoncpp_lib
+        gRPC::grpc++         # 通常 C++ 开发主要链接 grpc++
+        JsonCpp::JsonCpp     # 注意大小写
 )
