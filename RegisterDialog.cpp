@@ -1,10 +1,9 @@
 #include "RegisterDialog.h"
-#include "ui_RegisterDialog.h"
 #include "global.h"
+#include "ui_RegisterDialog.h"
+#include <qregularexpression.h>
 
-RegisterDialog::RegisterDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::RegisterDialog)
+RegisterDialog::RegisterDialog(QWidget *parent) : QDialog(parent), ui(new Ui::RegisterDialog)
 {
     ui->setupUi(this);
     ui->pass_edit->setEchoMode(QLineEdit::Password);
@@ -16,4 +15,33 @@ RegisterDialog::RegisterDialog(QWidget *parent) :
 RegisterDialog::~RegisterDialog()
 {
     delete ui;
+}
+
+void RegisterDialog::on_get_code_clicked()
+{
+    auto email = ui->email_edit->text();
+    QRegularExpression regex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
+    bool match = regex.match(email).hasMatch();
+    if (match)
+    {
+        // 发送http验证码
+    }
+    else
+    {
+        showTip(tr("邮箱地址不正确"), false);
+    }
+}
+
+void RegisterDialog::showTip(const QString &str, bool b_ok)
+{
+	if (b_ok)
+	{
+		ui->err_tip->setProperty("state","normal");
+	}
+	else 
+	{
+		ui->err_tip->setProperty("state","error");
+	}
+	ui->err_tip->setText(str);
+	repolish(ui->err_tip);
 }
