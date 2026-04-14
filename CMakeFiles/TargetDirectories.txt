@@ -1,0 +1,9 @@
+/home/asus/NETLEARN/CHAT/CMakeFiles/CHAT.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/edit_cache.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/rebuild_cache.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/list_install_components.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/install.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/install/local.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/install/strip.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/CHAT_autogen_timestamp_deps.dir
+/home/asus/NETLEARN/CHAT/CMakeFiles/CHAT_autogen.dir
