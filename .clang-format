@@ -15,3 +15,6 @@ AllowShortLambdasOnASingleLine: None
 # 针对 Qt 优化的细节
 AccessModifierOffset: -4
 ColumnLimit: 100
+
+# 强制模板声明后换行
+AlwaysBreakTemplateDeclarations: Yes
