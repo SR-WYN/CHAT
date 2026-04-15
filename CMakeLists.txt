@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 # --- 1. 寻找包 ---
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network)
 # Beast 依赖 system，如果用到多线程可能还需要 thread
-find_package(Boost REQUIRED COMPONENTS system) 
+find_package(Boost REQUIRED COMPONENTS system)
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
 find_package(jsoncpp REQUIRED)
@@ -41,10 +41,10 @@ add_custom_command(
     OUTPUT ${PROTO_GEN_FILES}
     COMMAND ${Protobuf_PROTOC_EXECUTABLE}
     ARGS --cpp_out=${PROTO_GEN_DIR}
-         --grpc_out=${PROTO_GEN_DIR}
-         --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
-         -I ${PROTO_SRC_DIR}
-         ${PROTO_FILE}
+    --grpc_out=${PROTO_GEN_DIR}
+    --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
+    -I ${PROTO_SRC_DIR}
+    ${PROTO_FILE}
     DEPENDS ${PROTO_FILE}
 )
 
@@ -70,18 +70,18 @@ qt_add_executable(CHAT
 
 # --- 6. 链接与配置 ---
 # 必须把生成的目录加入包含路径，否则代码里 #include "chat.pb.h" 会报错
-target_include_directories(CHAT PRIVATE 
+target_include_directories(CHAT PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROTO_GEN_DIR}
 )
 
 target_link_libraries(CHAT
     PRIVATE
-        Qt6::Core
-        Qt6::Widgets
-        Qt6::Network
-        Boost::system        # 建议链接 system
-        protobuf::libprotobuf
-        gRPC::grpc++         # 通常 C++ 开发主要链接 grpc++
-        JsonCpp::JsonCpp     # 注意大小写
+    Qt6::Widgets
+    Qt6::Network
+    Qt6::Core
+    Boost::system # 建议链接 system
+    protobuf::libprotobuf
+    gRPC::grpc++ # 通常 C++ 开发主要链接 grpc++
+    JsonCpp::JsonCpp # 注意大小写
 )

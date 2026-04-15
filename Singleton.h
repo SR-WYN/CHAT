@@ -1,35 +1,29 @@
 #pragma once
-
+#include <iostream>
 #include "global.h"
-#include <memory>
 
 template <typename T>
-class Singleton
-{
+class Singleton {
 protected:
+    // 保护构造：允许子类构造，禁止外部构造
     Singleton() = default;
-    Singleton(const Singleton<T> &) = delete;
-    Singleton &operator=(const Singleton<T> &) = delete;
-    static std::shared_ptr<T> _instance;
+    virtual ~Singleton() {
+        std::cout << "this is singleton destruct" << std::endl;
+    }
+
+    // 禁止拷贝和赋值
+    Singleton(const Singleton&) = delete;
+    Singleton& operator=(const Singleton&) = delete;
+
 public:
-    static T& GetInstance() // magic static
-    {
+    static T& GetInstance() {
+        // C++11 起，局部静态变量初始化是线程安全的
         static T instance;
         return instance;
     }
 
-    void PrintAddress()
-    {
-        std::cout << _instance().get() << std::endl;
+    void PrintAddress() {
+        // 直接取 instance 的地址
+        std::cout << &GetInstance() << std::endl;
     }
-
-    ~Singleton() 
-    {
-        std::cout << "this is singleton destruct" << std::endl;
-    }
-
 };
-
-//类内声明，类外初始化
-template <typename T>
-std::shared_ptr <T> Singleton<T>::_instance = nullptr;
