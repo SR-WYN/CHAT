@@ -2,6 +2,7 @@
 #include "HttpMgr.h"
 #include "ui_RegisterDialog.h"
 #include <qregularexpression.h>
+#include "ConfigMgr.h"
 
 RegisterDialog::RegisterDialog(QWidget *parent) : QDialog(parent), ui(new Ui::RegisterDialog)
 {
@@ -28,6 +29,10 @@ void RegisterDialog::on_get_code_clicked()
     if (match)
     {
         // 发送http验证码
+        QJsonObject json_obj;
+        json_obj["email"] = email;
+        HttpMgr::GetInstance().PostHttpReq(QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/get_verify_code"), json_obj,
+                                           ReqId::ID_GET_VARIFY_CODE, Modules::REGISTERMOD);
     }
     else
     {

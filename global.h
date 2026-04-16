@@ -9,6 +9,7 @@
 #include <mutex>
 #include <QByteArray>
 #include <QNetworkReply>
+#include <QJsonObject>
 
 //用来刷新qss
 extern std::function<void(QWidget*)> repolish;
