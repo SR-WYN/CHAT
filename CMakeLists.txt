@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOUIC ON) # 建议加上，处理 .ui 文件
 set(CMAKE_AUTOMOC ON) # 建议加上，处理 Qt 信号槽
 set(CMAKE_AUTORCC ON)
+set(MY_CONFIG_FILE "config.json")
 
 # --- 1. 寻找包 ---
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network)
@@ -37,6 +38,27 @@ set(PROTO_GEN_FILES
     "${PROTO_GEN_DIR}/chat.grpc.pb.h"
 )
 
+# --- 4. 源文件 ---
+set(CPP_SOURCES
+    main.cpp
+    mainwindow.cpp
+    LoginDialog.cpp
+    RegisterDialog.cpp
+    global.cpp
+    HttpMgr.cpp
+    ConfigMgr.cpp
+    # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
+)
+
+# --- 5. 构建 ---
+qt_add_executable(CHAT
+    ${CPP_SOURCES}
+    ${HEADERS}
+    ${UI_FILES}
+    ${PROTO_GEN_FILES}
+    resources.qrc
+)
+
 add_custom_command(
     OUTPUT ${PROTO_GEN_FILES}
     COMMAND ${Protobuf_PROTOC_EXECUTABLE}
@@ -48,24 +70,11 @@ add_custom_command(
     DEPENDS ${PROTO_FILE}
 )
 
-# --- 4. 源文件 ---
-set(CPP_SOURCES
-    main.cpp
-    mainwindow.cpp
-    LoginDialog.cpp
-    RegisterDialog.cpp
-    global.cpp
-    HttpMgr.cpp
-    # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
-)
-
-# --- 5. 构建 ---
-qt_add_executable(CHAT
-    ${CPP_SOURCES}
-    ${HEADERS}
-    ${UI_FILES}
-    ${PROTO_GEN_FILES}
-    resources.qrc
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/${MY_CONFIG_FILE}"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_CONFIG_FILE}"
+    COMMENT "Copying config.json to execution directory..."
 )
 
 # --- 6. 链接与配置 ---
