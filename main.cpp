@@ -1,5 +1,3 @@
-#include "chat.grpc.pb.h"
-#include "chat.pb.h"
 #include "mainwindow.h"
 #include <QApplication>
 #include <QFile>
