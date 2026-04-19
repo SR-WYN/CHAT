@@ -149,7 +149,7 @@ void RegisterDialog::on_confirm_btn_clicked()
 
     // 发送http请求注册用户
     QJsonObject json_obj;
-    json_obj["username"] = ui->user_edit->text();
+    json_obj["user"] = ui->user_edit->text();
     json_obj["email"] = ui->email_edit->text();
     json_obj["passwd"] = ui->pass_edit->text();
     json_obj["confirm"] = ui->confirm_edit->text();
