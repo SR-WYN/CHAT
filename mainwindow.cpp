@@ -4,29 +4,44 @@
 #include "ui_mainwindow.h"
 #include <qnamespace.h>
 
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+    this->setWindowIcon(QIcon(":/res/icon.ico"));
+    _login_dlg = new LoginDialog(this);
+    _reg_dlg = new RegisterDialog(this);
+    _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    _reg_dlg->hide();
+    setCentralWidget(_login_dlg);
+    _login_dlg->show();
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow) {
-  ui->setupUi(this);
-  this->setWindowIcon(QIcon(":/res/icon.ico"));
-  _login_dlg = new LoginDialog(this);
-  _reg_dlg = new RegisterDialog(this);
-  _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
-  _reg_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
-  _reg_dlg->hide();
-  setCentralWidget(_login_dlg);
-  _login_dlg->show();
-
-  // 创建和注册消息连接
-  connect(_login_dlg, &LoginDialog::switchRegister, this,
-          &MainWindow::slotSwitchReg);
-  
+    // 创建和注册消息连接
+    connect(_login_dlg, &LoginDialog::switchRegister, this, &MainWindow::slotSwitchReg);
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
 
-void MainWindow::slotSwitchReg() {
-  setCentralWidget(_reg_dlg);
-  _login_dlg->hide();
-  _reg_dlg->show();
+void MainWindow::slotSwitchReg()
+{
+    _reg_dlg = new RegisterDialog(this);
+
+    _reg_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    connect(_reg_dlg,&RegisterDialog::sigSwitchLogin,this,&MainWindow::slotSwitchLogin);
+    setCentralWidget(_reg_dlg);
+    _login_dlg->hide();
+    _reg_dlg->show();
+}
+
+void MainWindow::slotSwitchLogin()
+{
+    _login_dlg = new LoginDialog(this);
+    _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    setCentralWidget(_login_dlg);
+    _reg_dlg->hide();
+    _login_dlg->show();
+    connect(_login_dlg,&LoginDialog::switchRegister,this,&MainWindow::slotSwitchReg);
+    // connect(_login_dlg,&LoginDialog::switchReset,this,&MainWindow::slotSwitchReset);
 }

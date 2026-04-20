@@ -21,6 +21,7 @@ private slots:
     void on_get_code_clicked();
     void on_confirm_btn_clicked();
     void slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err);
+    void on_return_btn_clicked();
 
 private:
     void initHttpHandlers();
@@ -34,7 +35,12 @@ private:
     bool checkVerifyValid();
     void AddTipErr(TipErr te, QString tips);
     void DelTipErr(TipErr te);
+    void ChangeTipPage();
     QMap<TipErr,QString> _tip_errs;
+    QTimer* _countdown_timer;
+    int _countdown;
+signals:
+    void sigSwitchLogin();
 };
 
 #endif // REGISTERDIALOG_H
