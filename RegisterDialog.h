@@ -27,6 +27,14 @@ private:
     void showTip(const QString &str, bool b_ok);
     Ui::RegisterDialog *ui;
     QMap<ReqId,std::function<void(const QJsonObject&)>> _handlers;
+    bool checkUserValid();
+    bool checkEmailValid();
+    bool checkPassValid();
+    bool checkConfirmValid();
+    bool checkVerifyValid();
+    void AddTipErr(TipErr te, QString tips);
+    void DelTipErr(TipErr te);
+    QMap<TipErr,QString> _tip_errs;
 };
 
 #endif // REGISTERDIALOG_H

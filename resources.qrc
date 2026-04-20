@@ -3,5 +3,9 @@
         <file>res/icon.ico</file>
         <file>res/login.png</file>
         <file>res/style/style.qss</file>
+        <file>res/unvisible_hover.png</file>
+        <file>res/unvisible.png</file>
+        <file>res/visible_hover.png</file>
+        <file>res/visible.png</file>
     </qresource>
 </RCC>
