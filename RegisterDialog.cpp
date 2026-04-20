@@ -103,7 +103,7 @@ void RegisterDialog::on_get_code_clicked()
         json_obj["email"] = email;
         HttpMgr::GetInstance().PostHttpReq(
             QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/get_verify_code"), json_obj,
-            ReqId::ID_GET_VARIFY_CODE, Modules::REGISTERMOD);
+            ReqId::ID_GET_VERIFY_CODE, Modules::REGISTERMOD);
     }
     else
     {
@@ -153,7 +153,7 @@ void RegisterDialog::slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err)
 void RegisterDialog::initHttpHandlers()
 {
     // 注册获取验证码回包的逻辑
-    _handlers.insert(ReqId::ID_GET_VARIFY_CODE, [this](const QJsonObject &jsonObj) {
+    _handlers.insert(ReqId::ID_GET_VERIFY_CODE, [this](const QJsonObject &jsonObj) {
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
         {
@@ -322,6 +322,12 @@ void RegisterDialog::ChangeTipPage()
 }
 
 void RegisterDialog::on_return_btn_clicked()
+{
+    _countdown_timer->stop();
+    emit sigSwitchLogin();
+}
+
+void RegisterDialog::on_cancel_btn_clicked()
 {
     _countdown_timer->stop();
     emit sigSwitchLogin();

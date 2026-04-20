@@ -3,6 +3,7 @@
 #include "RegisterDialog.h"
 #include "ui_mainwindow.h"
 #include <qnamespace.h>
+#include "ResetDialog.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -17,6 +18,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // 创建和注册消息连接
     connect(_login_dlg, &LoginDialog::switchRegister, this, &MainWindow::slotSwitchReg);
+
+    //连接登录界面忘记密码信号
+    connect(_login_dlg,&LoginDialog::switchReset,this,&MainWindow::slotSwitchReset);
 }
 
 MainWindow::~MainWindow()
@@ -43,5 +47,34 @@ void MainWindow::slotSwitchLogin()
     _reg_dlg->hide();
     _login_dlg->show();
     connect(_login_dlg,&LoginDialog::switchRegister,this,&MainWindow::slotSwitchReg);
-    // connect(_login_dlg,&LoginDialog::switchReset,this,&MainWindow::slotSwitchReset);
+    connect(_login_dlg,&LoginDialog::switchReset,this,&MainWindow::slotSwitchReset);
+}
+
+void MainWindow::slotSwitchReset()
+{
+    // 创建一个CentralWidget,并将其设置为MainWindow的中心部件
+    _reset_dlg = new ResetDialog(this);
+    _reset_dlg->setWindowFlags(Qt::CustomizeWindowHint|Qt::FramelessWindowHint);
+    setCentralWidget(_reset_dlg);
+
+    _login_dlg->hide();
+    _reset_dlg->show();
+
+    //注册返回登录界面信号槽函数
+    connect(_reset_dlg,&ResetDialog::switchLogin,this,&MainWindow::slotSwitchLoginFromReset);
+}
+
+void MainWindow::slotSwitchLoginFromReset()
+{
+    //创建一个CentralWidget, 并将其设置为MainWindow的中心部件
+    _login_dlg = new LoginDialog(this);
+    _login_dlg->setWindowFlags(Qt::CustomizeWindowHint|Qt::FramelessWindowHint);
+    setCentralWidget(_login_dlg);
+
+   _reset_dlg->hide();
+    _login_dlg->show();
+    //连接登录界面忘记密码信号
+    connect(_login_dlg, &LoginDialog::switchReset, this, &MainWindow::slotSwitchReset);
+    //连接登录界面注册信号
+    connect(_login_dlg, &LoginDialog::switchRegister, this, &MainWindow::slotSwitchReg);
 }

@@ -1,118 +1,118 @@
 /* 全局背景与字体 */
 QWidget {
-    font-family: "Microsoft YaHei", "Segoe UI";
-    background-color: #FFFFFF;
-    color: #333333;
+  font-family: "Microsoft YaHei", "Segoe UI";
+  background-color: #ffffff;
+  color: #333333;
 }
 
 /* 侧边栏 - 使用极浅的灰色区分层级 */
 QWidget#sideBar {
-    background-color: #F7F7F7;
-    border-right: 1px solid #E5E5E5;
+  background-color: #f7f7f7;
+  border-right: 1px solid #e5e5e5;
 }
 
 /* 聊天记录区域 */
 QListWidget#chatArea {
-    background-color: #FFFFFF;
-    border: none;
-    outline: none;
+  background-color: #ffffff;
+  border: none;
+  outline: none;
 }
 
 /* --- 输入框区域：强化视觉边界 --- */
 QTextEdit#messageInput {
-    background-color: #FFFFFF;
-    border: 1px solid #DCDFE6; /* 明显的浅灰色边框 */
-    border-radius: 6px;
-    padding: 10px;
-    font-size: 14px;
-    color: #303133;
+  background-color: #ffffff;
+  border: 1px solid #dcdfe6; /* 明显的浅灰色边框 */
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+  color: #303133;
 }
 
 /* 输入框获得焦点时（点击后）的样式 */
 QTextEdit#messageInput:focus {
-    border: 1px solid #409EFF; /* 聚焦时变为蓝色，一眼就能看到在哪输入 */
+  border: 1px solid #409eff; /* 聚焦时变为蓝色，一眼就能看到在哪输入 */
 }
 
 /* 发送按钮 - 典型的现代蓝色风格 */
 QPushButton#sendBtn {
-    background-color: #409EFF;
-    color: white;
-    border-radius: 4px;
-    padding: 8px 18px;
-    font-weight: 500;
+  background-color: #409eff;
+  color: white;
+  border-radius: 4px;
+  padding: 8px 18px;
+  font-weight: 500;
 }
 
 QPushButton#sendBtn:hover {
-    background-color: #66B1FF;
+  background-color: #66b1ff;
 }
 
 QPushButton#sendBtn:pressed {
-    background-color: #3A8EE6;
+  background-color: #3a8ee6;
 }
 
 /* 滚动条美化 - 浅色系专用 */
 QScrollBar:vertical {
-    width: 8px;
-    background: transparent;
-    margin: 0px;
+  width: 8px;
+  background: transparent;
+  margin: 0px;
 }
 
 QScrollBar::handle:vertical {
-    background: #DCDFE6;
-    border-radius: 4px;
-    min-height: 30px;
+  background: #dcdfe6;
+  border-radius: 4px;
+  min-height: 30px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: #C0C4CC;
+  background: #c0c4cc;
 }
 
-#err_tip[state='normal']
-{
-    color:green;
+#err_tip[state="normal"] {
+  color: green;
 }
 
-#err_tip[state='error']
-{
-    color:red;
+#err_tip[state="error"] {
+  color: red;
 }
 
-#pass_visible[state='visible']
-{
-    border-image: url(:/res/visible.png);
+#pass_visible[state="visible"] {
+  border-image: url(:/res/visible.png);
 }
 
-#pass_visible[state='visible_hover']
-{
-    border-image: url(:/res/visible_hover.png);
+#pass_visible[state="visible_hover"] {
+  border-image: url(:/res/visible_hover.png);
 }
 
-#pass_visible[state='unvisible']
-{
-    border-image: url(:/res/unvisible.png);
+#pass_visible[state="unvisible"] {
+  border-image: url(:/res/unvisible.png);
 }
 
-#pass_visible[state='unvisible_hover']
-{
-    border-image: url(:/res/unvisible_hover.png);
+#pass_visible[state="unvisible_hover"] {
+  border-image: url(:/res/unvisible_hover.png);
 }
 
-#confirm_visible[state='visible']
-{
-    border-image: url(:/res/visible.png);
+#confirm_visible[state="visible"] {
+  border-image: url(:/res/visible.png);
 }
 
-#confirm_visible[state='visible_hover']
-{
-    border-image: url(:/res/visible_hover.png);
+#confirm_visible[state="visible_hover"] {
+  border-image: url(:/res/visible_hover.png);
 }
 
-#confirm_visible[state='unvisible']
-{
-    border-image: url(:/res/unvisible.png);
+#confirm_visible[state="unvisible"] {
+  border-image: url(:/res/unvisible.png);
 }
 
-#confirm_visible[state='unvisible_hover']
-{
-    border-image: url(:/res/unvisible_hover.png);
+#confirm_visible[state="unvisible_hover"] {
+  border-image: url(:/res/unvisible_hover.png);
+}
+
+#forget_label[state="normal"],
+#forget_label[state="selected"] {
+  color: black;
+}
+
+#forget_label[state="hover"],
+#forget_label[state="selected_hover"] {
+  color: blue;
 }
