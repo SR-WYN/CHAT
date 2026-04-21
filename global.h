@@ -7,6 +7,7 @@
 #include <QRegularExpression>
 #include <QWidget>
 #include <functional>
+#include <grpcpp/support/server_interceptor.h>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -21,12 +22,14 @@ enum ReqId
     ID_GET_VERIFY_CODE = 1001, // 获取验证码
     ID_REG_USER = 1002,        // 注册用户
     ID_RESET_PWD = 1003,       // 重置密码
+    ID_LOGIN_USER = 1004,      // 登录用户
 };
 
 enum Modules
 {
     REGISTERMOD = 0,
     RESETMOD = 1,
+    LOGINMOD = 2,
 };
 
 enum ErrorCodes
@@ -51,4 +54,12 @@ enum ClickLabelState
 {
     NORMAL = 0,
     SELECTED = 1,
+};
+
+struct ServerInfo
+{
+    QString Host;
+    QString Port;
+    QString Token;
+    int Uid;
 };

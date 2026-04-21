@@ -64,7 +64,6 @@ bool ResetDialog::checkPassValid()
         // 提示字符非法
         AddTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;
-        ;
     }
     DelTipErr(TipErr::TIP_PWD_ERR);
     return true;
