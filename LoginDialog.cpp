@@ -2,9 +2,11 @@
 #include "ClickedLabel.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
+#include "TcpMgr.h"
 #include "global.h"
 #include "ui_LoginDialog.h"
 #include <qdebug.h>
+#include <qjsondocument.h>
 #include <qjsonobject.h>
 #include <qnamespace.h>
 #include <qpainter.h>
@@ -26,6 +28,15 @@ LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), _ui(new Ui::LoginDi
     // 连接登录回包信号
     connect(HttpMgr::getInstancePtr(), &HttpMgr::sig_login_mod_finish, this,
             &LoginDialog::slot_login_mod_finish);
+    // 连接tcp连接信号
+    connect(this, &LoginDialog::sig_login_connect_tcp, TcpMgr::getInstancePtr(),
+            &TcpMgr::slot_tcp_connect);
+    // 连接tcp管理者发出的连接成功信号
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_con_success, this,
+            &LoginDialog::slot_tcp_con_success);
+    // 连接tcp管理者发出的失败信号
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_login_failed, this,
+            &LoginDialog::slot_login_failed);
 }
 
 LoginDialog::~LoginDialog()
@@ -73,7 +84,7 @@ void LoginDialog::initHead()
     // 设置图片自动缩放
     qDebug() << originalPixmap.size() << _ui->head_label->size();
     originalPixmap = originalPixmap.scaled(_ui->head_label->size(), Qt::KeepAspectRatio,
-                                             Qt::SmoothTransformation);
+                                           Qt::SmoothTransformation);
 
     // 创建一个和原始图片相同大小的QPixmap，同于绘制圆角图片
     QPixmap roundedPixmap(originalPixmap.size());
@@ -210,6 +221,35 @@ void LoginDialog::slot_login_mod_finish(ReqId id, QString res, ErrorCodes err)
         showTip(tr("json解析错误"), false);
         return;
     }
-    //调用对应逻辑，根据id回调
+    // 调用对应逻辑，根据id回调
     _handlers[id](jsonDoc.object());
+}
+
+void LoginDialog::slot_tcp_con_success(bool bsuccess)
+{
+    if (bsuccess)
+    {
+        showTip(tr("聊天服务连接成功，正在登陆..."), true);
+        QJsonObject json_obj;
+        json_obj["uid"] = _uid;
+        json_obj["token"] = _token;
+
+        QJsonDocument doc(json_obj);
+        QString json_string = doc.toJson(QJsonDocument::Indented);
+
+        // 发送tcp请求给chat server
+        TcpMgr::getInstance().sig_send_data(ReqId::ID_CHAT_LOGIN, json_string);
+    }
+    else
+    {
+        showTip(tr("网络异常"), false);
+        enableBtn(true);
+    }
+}
+
+void LoginDialog::slot_login_failed(int err)
+{
+    QString relust = QString("登陆失败, err is %1").arg(err);
+    showTip(relust,false);
+    enableBtn(true);
 }

@@ -32,11 +32,15 @@ private:
     void showTip(QString str, bool b_ok);
     void enableBtn(bool enable);
     QMap<ReqId, std::function<void(const QJsonObject &)>> _handlers;
+    int _uid;
+    QString _token;
 public slots:
     void slot_forget_label_clicked();
 private slots:
     void slot_login_btn_clicked();
     void slot_login_mod_finish(ReqId id, QString res, ErrorCodes err);
+    void slot_tcp_con_success(bool bsuccess);
+    void slot_login_failed(int err);
 signals:
     void sig_login_switch_register();
     void sig_login_switch_reset();
