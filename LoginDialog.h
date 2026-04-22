@@ -6,7 +6,10 @@
 #include "global.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class LoginDialog; }
+namespace Ui
+{
+class LoginDialog;
+}
 QT_END_NAMESPACE
 
 class LoginDialog : public QDialog
@@ -17,28 +20,27 @@ public:
     explicit LoginDialog(QWidget *parent = nullptr);
     ~LoginDialog() override;
 
-
 private:
     void initHttpHandlers();
     void initHead();
-    Ui::LoginDialog *ui;
+    Ui::LoginDialog *_ui;
     bool checkEmailValid();
     bool checkPwdValid();
-    void AddTipErr(TipErr err, QString tips);
-    void DelTipErr(TipErr err);
-    QMap<TipErr,QString> _tip_errs;
-    void showTip(QString str,bool b_ok);
+    void addTipErr(TipErr err, QString tips);
+    void delTipErr(TipErr err);
+    QMap<TipErr, QString> _tip_errs;
+    void showTip(QString str, bool b_ok);
     void enableBtn(bool enable);
-    QMap<ReqId,std::function<void(const QJsonObject&)>> _handlers;
+    QMap<ReqId, std::function<void(const QJsonObject &)>> _handlers;
 public slots:
-    void slotForgetPwd();
+    void slot_forget_label_clicked();
 private slots:
-    void on_login_btn_clicked();
+    void slot_login_btn_clicked();
     void slot_login_mod_finish(ReqId id, QString res, ErrorCodes err);
 signals:
-    void switchRegister();
-    void switchReset();
-    void sig_connect_tcp(ServerInfo si);
+    void sig_login_switch_register();
+    void sig_login_switch_reset();
+    void sig_login_connect_tcp(ServerInfo si);
 };
 
 #endif // LOGINDIALOG_H

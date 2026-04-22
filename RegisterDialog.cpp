@@ -1,8 +1,10 @@
 #include "RegisterDialog.h"
+#include "ClickedLabel.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
 #include "TimerBtn.h"
 #include "global.h"
+#include <QJsonDocument>
 #include "ui_RegisterDialog.h"
 #include <qdebug.h>
 #include <qjsonobject.h>
@@ -11,62 +13,69 @@
 #include <qregularexpression.h>
 #include <qtimer.h>
 
-RegisterDialog::RegisterDialog(QWidget *parent) : QDialog(parent), ui(new Ui::RegisterDialog),_countdown(5)
+RegisterDialog::RegisterDialog(QWidget *parent)
+    : QDialog(parent), _ui(new Ui::RegisterDialog), _countdown(5)
 {
-    ui->setupUi(this);
-    ui->pass_edit->setEchoMode(QLineEdit::Password);
-    ui->confirm_edit->setEchoMode(QLineEdit::Password);
-    ui->err_tip->setProperty("state", "normal");
-    repolish(ui->err_tip);
-    connect(&HttpMgr::GetInstance(), &HttpMgr::sig_reg_mod_finish, this,
+    _ui->setupUi(this);
+    _ui->pass_edit->setEchoMode(QLineEdit::Password);
+    _ui->confirm_edit->setEchoMode(QLineEdit::Password);
+    _ui->err_tip->setProperty("state", "normal");
+    repolish(_ui->err_tip);
+    connect(&HttpMgr::getInstance(), &HttpMgr::sig_reg_mod_finish, this,
             &RegisterDialog::slot_reg_mod_finish);
     initHttpHandlers();
-    ui->err_tip->clear();
+    _ui->err_tip->clear();
 
-    connect(ui->user_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->get_code, &QPushButton::clicked, this, &RegisterDialog::slot_get_code_btn_clicked);
+    connect(_ui->confirm_btn, &QPushButton::clicked, this,
+            &RegisterDialog::slot_confirm_btn_clicked);
+    connect(_ui->return_btn, &QPushButton::clicked, this, &RegisterDialog::slot_return_btn_clicked);
+    connect(_ui->cancel_btn, &QPushButton::clicked, this, &RegisterDialog::slot_cancel_btn_clicked);
+
+    connect(_ui->user_edit, &QLineEdit::editingFinished, this, [this]() {
         checkUserValid();
     });
-    connect(ui->email_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->email_edit, &QLineEdit::editingFinished, this, [this]() {
         checkEmailValid();
     });
-    connect(ui->pass_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->pass_edit, &QLineEdit::editingFinished, this, [this]() {
         checkPassValid();
     });
-    connect(ui->confirm_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->confirm_edit, &QLineEdit::editingFinished, this, [this]() {
         checkConfirmValid();
     });
-    connect(ui->verify_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->verify_edit, &QLineEdit::editingFinished, this, [this]() {
         checkVerifyValid();
     });
 
-    ui->pass_visible->setCursor(Qt::PointingHandCursor);
-    ui->confirm_visible->setCursor(Qt::PointingHandCursor);
-    ui->pass_visible->setState("unvisible", "unvisible_hover", "", "visible", "visible_hover", "");
-    ui->confirm_visible->setState("unvisible", "unvisible_hover", "", "visible", "visible_hover",
-                                  "");
+    _ui->pass_visible->setCursor(Qt::PointingHandCursor);
+    _ui->confirm_visible->setCursor(Qt::PointingHandCursor);
+    _ui->pass_visible->setState("unvisible", "unvisible_hover", "", "visible", "visible_hover", "");
+    _ui->confirm_visible->setState("unvisible", "unvisible_hover", "", "visible", "visible_hover",
+                                    "");
 
-    connect(ui->pass_visible, &ClickedLabel::clicked, this, [this]() {
-        auto state = ui->pass_visible->getCurState();
+    connect(_ui->pass_visible, &ClickedLabel::sig_label_clicked, this, [this]() {
+        auto state = _ui->pass_visible->getCurState();
         if (state == ClickLabelState::NORMAL)
         {
-            ui->pass_edit->setEchoMode(QLineEdit::Password);
+            _ui->pass_edit->setEchoMode(QLineEdit::Password);
         }
         else
         {
-            ui->pass_edit->setEchoMode(QLineEdit::Normal);
+            _ui->pass_edit->setEchoMode(QLineEdit::Normal);
         }
         qDebug() << "Label was clicked!";
     });
 
-    connect(ui->confirm_visible, &ClickedLabel::clicked, this, [this]() {
-        auto state = ui->confirm_visible->getCurState();
+    connect(_ui->confirm_visible, &ClickedLabel::sig_label_clicked, this, [this]() {
+        auto state = _ui->confirm_visible->getCurState();
         if (state == ClickLabelState::NORMAL)
         {
-            ui->confirm_edit->setEchoMode(QLineEdit::Password);
+            _ui->confirm_edit->setEchoMode(QLineEdit::Password);
         }
         else
         {
-            ui->confirm_edit->setEchoMode(QLineEdit::Normal);
+            _ui->confirm_edit->setEchoMode(QLineEdit::Normal);
         }
         qDebug() << "Label was clicked!";
     });
@@ -76,24 +85,24 @@ RegisterDialog::RegisterDialog(QWidget *parent) : QDialog(parent), ui(new Ui::Re
         if (_countdown == 0)
         {
             _countdown_timer->stop();
-            emit sigSwitchLogin();
+            emit sig_register_switch_login();
             return;
         }
         _countdown--;
         auto str = QString("注册成功，%1 秒后自动跳转登录页").arg(_countdown);
-        ui->tip_label->setText(str);
+        _ui->tip_label->setText(str);
     });
 }
 
 RegisterDialog::~RegisterDialog()
 {
     qDebug() << "destruct RegisterDialog";
-    delete ui;
+    delete _ui;
 }
 
-void RegisterDialog::on_get_code_clicked()
+void RegisterDialog::slot_get_code_btn_clicked()
 {
-    auto email = ui->email_edit->text();
+    auto email = _ui->email_edit->text();
     QRegularExpression regex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
     bool match = regex.match(email).hasMatch();
     if (match)
@@ -101,8 +110,8 @@ void RegisterDialog::on_get_code_clicked()
         // 发送http验证码
         QJsonObject json_obj;
         json_obj["email"] = email;
-        HttpMgr::GetInstance().PostHttpReq(
-            QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/get_verify_code"), json_obj,
+        HttpMgr::getInstance().postHttpReq(
+            QUrl(ConfigMgr::getInstance().getUrlPrefix() + "/get_verify_code"), json_obj,
             ReqId::ID_GET_VERIFY_CODE, Modules::REGISTERMOD);
     }
     else
@@ -115,14 +124,14 @@ void RegisterDialog::showTip(const QString &str, bool b_ok)
 {
     if (b_ok)
     {
-        ui->err_tip->setProperty("state", "normal");
+        _ui->err_tip->setProperty("state", "normal");
     }
     else
     {
-        ui->err_tip->setProperty("state", "error");
+        _ui->err_tip->setProperty("state", "error");
     }
-    ui->err_tip->setText(str);
-    repolish(ui->err_tip);
+    _ui->err_tip->setText(str);
+    repolish(_ui->err_tip);
 }
 
 void RegisterDialog::slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err)
@@ -174,38 +183,38 @@ void RegisterDialog::initHttpHandlers()
         auto email = jsonObj["email"].toString();
         showTip(tr("用户注册成功"), true);
         qDebug() << "Email is " << email << Qt::endl;
-        ChangeTipPage();
+        changeTipPage();
     });
 }
 
-void RegisterDialog::on_confirm_btn_clicked()
+void RegisterDialog::slot_confirm_btn_clicked()
 {
-    if (ui->user_edit->text() == "")
+    if (_ui->user_edit->text() == "")
     {
         showTip(tr("用户名不能为空"), false);
         return;
     }
-    if (ui->email_edit->text() == "")
+    if (_ui->email_edit->text() == "")
     {
         showTip(tr("邮箱不能为空"), false);
         return;
     }
-    if (ui->pass_edit->text() == "")
+    if (_ui->pass_edit->text() == "")
     {
         showTip(tr("密码不能为空"), false);
         return;
     }
-    if (ui->confirm_edit->text() == "")
+    if (_ui->confirm_edit->text() == "")
     {
         showTip(tr("确认密码不能为空"), false);
         return;
     }
-    if (ui->pass_edit->text() != ui->confirm_edit->text())
+    if (_ui->pass_edit->text() != _ui->confirm_edit->text())
     {
         showTip(tr("两次密码不一致"), false);
         return;
     }
-    if (ui->verify_edit->text() == "")
+    if (_ui->verify_edit->text() == "")
     {
         showTip(tr("验证码不能为空"), false);
         return;
@@ -213,122 +222,122 @@ void RegisterDialog::on_confirm_btn_clicked()
 
     // 发送http请求注册用户
     QJsonObject json_obj;
-    json_obj["user"] = ui->user_edit->text();
-    json_obj["email"] = ui->email_edit->text();
-    auto passwd = ui->pass_edit->text(); // 加密
+    json_obj["user"] = _ui->user_edit->text();
+    json_obj["email"] = _ui->email_edit->text();
+    auto passwd = _ui->pass_edit->text(); // 加密
     json_obj["passwd"] = xorString(passwd);
-    auto confirm = ui->confirm_edit->text(); // 加密
+    auto confirm = _ui->confirm_edit->text(); // 加密
     json_obj["confirm"] = xorString(confirm);
-    json_obj["verify_code"] = ui->verify_edit->text();
-    HttpMgr::GetInstance().PostHttpReq(
-        QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/user_register"), json_obj,
+    json_obj["verify_code"] = _ui->verify_edit->text();
+    HttpMgr::getInstance().postHttpReq(
+        QUrl(ConfigMgr::getInstance().getUrlPrefix() + "/user_register"), json_obj,
         ReqId::ID_REG_USER, Modules::REGISTERMOD);
 }
 
 bool RegisterDialog::checkUserValid()
 {
-    if (ui->user_edit->text() == "")
+    if (_ui->user_edit->text() == "")
     {
-        AddTipErr(TipErr::TIP_USER_ERR, tr("用户名不能为空"));
+        addTipErr(TipErr::TIP_USER_ERR, tr("用户名不能为空"));
         return false;
     }
-    DelTipErr(TipErr::TIP_USER_ERR);
+    delTipErr(TipErr::TIP_USER_ERR);
     return true;
 }
 
 bool RegisterDialog::checkEmailValid()
 {
-    auto email = ui->email_edit->text();
+    auto email = _ui->email_edit->text();
     QRegularExpression regex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
     bool match = regex.match(email).hasMatch();
     if (!match)
     {
-        AddTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
+        addTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
         return false;
     }
-    DelTipErr(TipErr::TIP_EMAIL_ERR);
+    delTipErr(TipErr::TIP_EMAIL_ERR);
     return true;
 }
 
 bool RegisterDialog::checkPassValid()
 {
-    auto pass = ui->pass_edit->text();
+    auto pass = _ui->pass_edit->text();
     QRegularExpression regex(R"(^[a-zA-Z0-9~!@#$%^&*()-_=+\[\]{};':",./<>?\\|/.]{6,}$)");
 
     bool match = regex.match(pass).hasMatch();
     if (!match)
     {
         // 假设你在 TipErr 枚举中定义了 TIP_PWD_ERR
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("密码长度至少为6位且不能包含非法字符"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("密码长度至少为6位且不能包含非法字符"));
         return false;
     }
-    auto confirm = ui->confirm_edit->text();
+    auto confirm = _ui->confirm_edit->text();
     if (pass != confirm)
     {
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("两次密码不一致"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("两次密码不一致"));
         return false;
     }
-    DelTipErr(TipErr::TIP_PWD_ERR);
+    delTipErr(TipErr::TIP_PWD_ERR);
     return true;
 }
 
 bool RegisterDialog::checkConfirmValid()
 {
-    auto confirm = ui->confirm_edit->text();
-    if (confirm != ui->pass_edit->text())
+    auto confirm = _ui->confirm_edit->text();
+    if (confirm != _ui->pass_edit->text())
     {
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("两次密码不一致"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("两次密码不一致"));
         return false;
     }
-    DelTipErr(TipErr::TIP_PWD_ERR);
+    delTipErr(TipErr::TIP_PWD_ERR);
     return true;
 }
 
 bool RegisterDialog::checkVerifyValid()
 {
-    auto verify = ui->verify_edit->text();
+    auto verify = _ui->verify_edit->text();
     if (verify == "")
     {
-        AddTipErr(TipErr::TIP_VERIFY_ERR, tr("验证码不能为空"));
+        addTipErr(TipErr::TIP_VERIFY_ERR, tr("验证码不能为空"));
         return false;
     }
-    DelTipErr(TipErr::TIP_VERIFY_ERR);
+    delTipErr(TipErr::TIP_VERIFY_ERR);
     return true;
 }
 
-void RegisterDialog::AddTipErr(TipErr te, QString tips)
+void RegisterDialog::addTipErr(TipErr te, QString tips)
 {
     _tip_errs[te] = tips;
     showTip(tips, false);
 }
 
-void RegisterDialog::DelTipErr(TipErr te)
+void RegisterDialog::delTipErr(TipErr te)
 {
     _tip_errs.remove(te);
     if (_tip_errs.empty())
     {
-        ui->err_tip->clear();
+        _ui->err_tip->clear();
         return;
     }
     showTip(_tip_errs.first(), false);
 }
 
-void RegisterDialog::ChangeTipPage()
+void RegisterDialog::changeTipPage()
 {
     _countdown_timer->stop();
-    ui->stackedWidget->setCurrentWidget(ui->page_2);
+    _ui->stackedWidget->setCurrentWidget(_ui->page_2);
 
     _countdown_timer->start(1000);
 }
 
-void RegisterDialog::on_return_btn_clicked()
+void RegisterDialog::slot_return_btn_clicked()
 {
     _countdown_timer->stop();
-    emit sigSwitchLogin();
+    emit sig_register_switch_login();
 }
 
-void RegisterDialog::on_cancel_btn_clicked()
+void RegisterDialog::slot_cancel_btn_clicked()
 {
     _countdown_timer->stop();
-    emit sigSwitchLogin();
+    emit sig_register_switch_login();
 }

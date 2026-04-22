@@ -58,8 +58,8 @@ enum ClickLabelState
 
 struct ServerInfo
 {
-    QString Host;
-    QString Port;
-    QString Token;
-    int Uid;
+    QString host;
+    QString port;
+    QString token;
+    int uid;
 };

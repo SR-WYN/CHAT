@@ -8,7 +8,7 @@ class ConfigMgr : public Singleton<ConfigMgr>
     friend class Singleton<ConfigMgr>;
 
 public:
-    QString GetUrlPrefix() const;
+    QString getUrlPrefix() const;
 private:
     ConfigMgr();
     ~ConfigMgr() override;

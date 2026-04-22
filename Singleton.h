@@ -18,20 +18,21 @@ protected:
     Singleton &operator=(const Singleton &) = delete;
 
 public:
-    static T &GetInstance()
+    static T &getInstance()
     {
         // C++11 起，局部静态变量初始化是线程安全的
         static T instance;
         return instance;
     }
 
-    static T* getInstancePtr() {
-        return &GetInstance();
+    static T *getInstancePtr()
+    {
+        return &getInstance();
     }
 
-    void PrintAddress()
+    void printAddress()
     {
         // 直接取 instance 的地址
-        std::cout << &GetInstance() << std::endl;
+        std::cout << &getInstance() << std::endl;
     }
 };

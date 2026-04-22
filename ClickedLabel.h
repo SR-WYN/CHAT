@@ -27,7 +27,7 @@ private:
 
     ClickLabelState _cur_state;
 signals:
-    void clicked();
+    void sig_label_clicked();
 };
 
 #endif // CLICKEDLABEL_H

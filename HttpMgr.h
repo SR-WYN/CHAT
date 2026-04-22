@@ -15,7 +15,7 @@ class HttpMgr : public QObject, public Singleton<HttpMgr>
     Q_OBJECT
 public:
     ~HttpMgr() override;
-    void PostHttpReq(QUrl url, QJsonObject json, ReqId req_id, Modules mod);
+    void postHttpReq(QUrl url, QJsonObject json, ReqId req_id, Modules mod);
 
 private:
     friend class Singleton<HttpMgr>;

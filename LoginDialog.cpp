@@ -11,14 +11,16 @@
 #include <qpainterpath.h>
 #include <qpixmap.h>
 
-LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), ui(new Ui::LoginDialog)
+LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), _ui(new Ui::LoginDialog)
 {
-    ui->setupUi(this);
+    _ui->setupUi(this);
 
-    connect(ui->reg_btn, &QPushButton::clicked, this, &LoginDialog::switchRegister);
+    connect(_ui->reg_btn, &QPushButton::clicked, this, &LoginDialog::sig_login_switch_register);
 
-    ui->forget_label->setState("normal", "hover", "", "selected", "selected_hover", "");
-    connect(ui->forget_label, &ClickedLabel::clicked, this, &LoginDialog::slotForgetPwd);
+    _ui->forget_label->setState("normal", "hover", "", "selected", "selected_hover", "");
+    connect(_ui->forget_label, &ClickedLabel::sig_label_clicked, this,
+            &LoginDialog::slot_forget_label_clicked);
+    connect(_ui->login_btn, &QPushButton::clicked, this, &LoginDialog::slot_login_btn_clicked);
     initHead();
     initHttpHandlers();
     // 连接登录回包信号
@@ -29,13 +31,13 @@ LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), ui(new Ui::LoginDia
 LoginDialog::~LoginDialog()
 {
     qDebug() << "destruct LoginDialog";
-    delete ui;
+    delete _ui;
 }
 
-void LoginDialog::slotForgetPwd()
+void LoginDialog::slot_forget_label_clicked()
 {
-    qDebug() << "slotForgetPwd";
-    emit switchReset();
+    qDebug() << "slot_forget_label_clicked";
+    emit sig_login_switch_reset();
 }
 
 void LoginDialog::initHttpHandlers()
@@ -52,14 +54,14 @@ void LoginDialog::initHttpHandlers()
         // 发送信号通知tcpMgr发送长连接
         auto email = jsonObj["email"].toString();
         ServerInfo si;
-        si.Uid = jsonObj["uid"].toInt();
-        si.Host = jsonObj["host"].toString();
-        si.Port = jsonObj["port"].toString();
-        si.Token = jsonObj["token"].toString();
+        si.uid = jsonObj["uid"].toInt();
+        si.host = jsonObj["host"].toString();
+        si.port = jsonObj["port"].toString();
+        si.token = jsonObj["token"].toString();
 
-        qDebug() << "email is " << email << "\n uid is " << si.Uid << "\n host is " << si.Host
-                 << "\n Port is " << si.Port << "\n Token is " << si.Token;
-        emit sig_connect_tcp(si);
+        qDebug() << "email is " << email << "\n uid is " << si.uid << "\n host is " << si.host
+                 << "\n Port is " << si.port << "\n Token is " << si.token;
+        emit sig_login_connect_tcp(si);
     });
 }
 
@@ -69,9 +71,9 @@ void LoginDialog::initHead()
     QPixmap originalPixmap(":/res/login.png");
 
     // 设置图片自动缩放
-    qDebug() << originalPixmap.size() << ui->head_label->size();
-    originalPixmap = originalPixmap.scaled(ui->head_label->size(), Qt::KeepAspectRatio,
-                                           Qt::SmoothTransformation);
+    qDebug() << originalPixmap.size() << _ui->head_label->size();
+    originalPixmap = originalPixmap.scaled(_ui->head_label->size(), Qt::KeepAspectRatio,
+                                             Qt::SmoothTransformation);
 
     // 创建一个和原始图片相同大小的QPixmap，同于绘制圆角图片
     QPixmap roundedPixmap(originalPixmap.size());
@@ -90,49 +92,49 @@ void LoginDialog::initHead()
     painter.drawPixmap(0, 0, originalPixmap);
 
     // 设置绘制好的圆角图片到QLabel
-    ui->head_label->setPixmap(roundedPixmap);
+    _ui->head_label->setPixmap(roundedPixmap);
 }
 
-void LoginDialog::on_login_btn_clicked()
+void LoginDialog::slot_login_btn_clicked()
 {
-    qDebug() << "on_login_btn_clicked";
+    qDebug() << "slot_login_btn_clicked";
     if (!checkEmailValid() || !checkPwdValid())
     {
         return;
     }
     enableBtn(false);
 
-    auto email = ui->email_edit->text();
-    auto pwd = ui->pass_edit->text();
+    auto email = _ui->email_edit->text();
+    auto pwd = _ui->pass_edit->text();
     // 发送http请求登录
     QJsonObject json_obj;
     json_obj["email"] = email;
     json_obj["passwd"] = xorString(pwd);
-    HttpMgr::GetInstance().PostHttpReq(
-        QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/user_login"), json_obj,
+    HttpMgr::getInstance().postHttpReq(
+        QUrl(ConfigMgr::getInstance().getUrlPrefix() + "/user_login"), json_obj,
         ReqId::ID_LOGIN_USER, Modules::LOGINMOD);
 }
 
 bool LoginDialog::checkEmailValid()
 {
-    QString email = ui->email_edit->text();
+    QString email = _ui->email_edit->text();
     if (email.isEmpty())
     {
         qDebug() << "email empty ";
-        AddTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱不能为空"));
+        addTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱不能为空"));
         return false;
     }
-    DelTipErr(TipErr::TIP_EMAIL_ERR);
+    delTipErr(TipErr::TIP_EMAIL_ERR);
     return true;
 }
 
 bool LoginDialog::checkPwdValid()
 {
-    auto pass = ui->pass_edit->text();
+    auto pass = _ui->pass_edit->text();
     if (pass.length() < 6 || pass.length() > 15)
     {
         // 提示长度不准确
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
         return false;
     }
     // 创建一个正则表达式对象，按照上述密码要求
@@ -143,25 +145,25 @@ bool LoginDialog::checkPwdValid()
     if (!match)
     {
         // 提示字符非法
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;
     }
-    DelTipErr(TipErr::TIP_PWD_ERR);
+    delTipErr(TipErr::TIP_PWD_ERR);
     return true;
 }
 
-void LoginDialog::AddTipErr(TipErr err, QString tips)
+void LoginDialog::addTipErr(TipErr err, QString tips)
 {
     _tip_errs[err] = tips;
     showTip(tips, false);
 }
 
-void LoginDialog::DelTipErr(TipErr err)
+void LoginDialog::delTipErr(TipErr err)
 {
     _tip_errs.remove(err);
     if (_tip_errs.empty())
     {
-        ui->tip_err->clear();
+        _ui->tip_err->clear();
         return;
     }
     showTip(_tip_errs.first(), false);
@@ -171,27 +173,27 @@ void LoginDialog::showTip(QString str, bool b_ok)
 {
     if (b_ok)
     {
-        ui->tip_err->setProperty("state", "normal");
+        _ui->tip_err->setProperty("state", "normal");
     }
     else
     {
-        ui->tip_err->setProperty("state", "err");
+        _ui->tip_err->setProperty("state", "err");
     }
-    ui->tip_err->setText(str);
-    repolish(ui->tip_err);
+    _ui->tip_err->setText(str);
+    repolish(_ui->tip_err);
 }
 
 void LoginDialog::enableBtn(bool enable)
 {
-    ui->login_btn->setEnabled(enable);
-    ui->reg_btn->setEnabled(enable);
+    _ui->login_btn->setEnabled(enable);
+    _ui->reg_btn->setEnabled(enable);
 }
 
 void LoginDialog::slot_login_mod_finish(ReqId id, QString res, ErrorCodes err)
 {
     if (err != ErrorCodes::SUCCESS)
     {
-        showTip(tr("网络请求错误"),false);
+        showTip(tr("网络请求错误"), false);
         return;
     }
     // 解析 JSON 字符串，res需转化为QByteArray
@@ -199,13 +201,13 @@ void LoginDialog::slot_login_mod_finish(ReqId id, QString res, ErrorCodes err)
     // json 解析错误
     if (jsonDoc.isNull())
     {
-        showTip(tr("json解析错误"),false);
+        showTip(tr("json解析错误"), false);
         return;
     }
     // json 解析错误
     if (!jsonDoc.isObject())
     {
-        showTip(tr("json解析错误"),false);
+        showTip(tr("json解析错误"), false);
         return;
     }
     //调用对应逻辑，根据id回调

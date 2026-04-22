@@ -50,7 +50,7 @@ void ConfigMgr::loadGateServer(const QJsonObject &root)
     }
 }
 
-QString ConfigMgr::GetUrlPrefix() const
+QString ConfigMgr::getUrlPrefix() const
 {
     return _url_prefix;
 }

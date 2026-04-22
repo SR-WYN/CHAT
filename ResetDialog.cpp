@@ -3,23 +3,29 @@
 #include "HttpMgr.h"
 #include "ui_ResetDialog.h"
 #include <QDebug>
+#include <QRegularExpression>
 #include <qdebug.h>
 
-ResetDialog::ResetDialog(QWidget *parent) : QDialog(parent), ui(new Ui::ResetDialog)
+ResetDialog::ResetDialog(QWidget *parent) : QDialog(parent), _ui(new Ui::ResetDialog)
 {
-    ui->setupUi(this);
+    _ui->setupUi(this);
 
-    connect(ui->user_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->return_btn, &QPushButton::clicked, this, &ResetDialog::slot_return_btn_clicked);
+    connect(_ui->get_verify_btn, &QPushButton::clicked, this,
+            &ResetDialog::slot_get_verify_btn_clicked);
+    connect(_ui->confirm_btn, &QPushButton::clicked, this, &ResetDialog::slot_confirm_btn_clicked);
+
+    connect(_ui->user_edit, &QLineEdit::editingFinished, this, [this]() {
         checkUserValid();
     });
 
-    connect(ui->email_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->email_edit, &QLineEdit::editingFinished, this, [this]() {
         checkEmailValid();
     });
-    connect(ui->pwd_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->pwd_edit, &QLineEdit::editingFinished, this, [this]() {
         checkPassValid();
     });
-    connect(ui->get_verify_edit, &QLineEdit::editingFinished, this, [this]() {
+    connect(_ui->get_verify_edit, &QLineEdit::editingFinished, this, [this]() {
         checkVerifyValid();
     });
 
@@ -31,27 +37,27 @@ ResetDialog::ResetDialog(QWidget *parent) : QDialog(parent), ui(new Ui::ResetDia
 
 ResetDialog::~ResetDialog()
 {
-    delete ui;
+    delete _ui;
 }
 
 bool ResetDialog::checkUserValid()
 {
-    if (ui->user_edit->text() == "")
+    if (_ui->user_edit->text() == "")
     {
-        AddTipErr(TipErr::TIP_USER_ERR, tr("用户名不能为空"));
+        addTipErr(TipErr::TIP_USER_ERR, tr("用户名不能为空"));
         return false;
     }
-    DelTipErr(TipErr::TIP_USER_ERR);
+    delTipErr(TipErr::TIP_USER_ERR);
     return true;
 }
 
 bool ResetDialog::checkPassValid()
 {
-    auto pass = ui->pwd_edit->text();
+    auto pass = _ui->pwd_edit->text();
     if (pass.length() < 6 || pass.length() > 15)
     {
         // 提示长度不准确
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
         return false;
     }
     // 创建一个正则表达式对象，按照上述密码要求
@@ -62,54 +68,54 @@ bool ResetDialog::checkPassValid()
     if (!match)
     {
         // 提示字符非法
-        AddTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
+        addTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;
     }
-    DelTipErr(TipErr::TIP_PWD_ERR);
+    delTipErr(TipErr::TIP_PWD_ERR);
     return true;
 }
 
 bool ResetDialog::checkEmailValid()
 {
     // 验证邮箱的地址正则表达式
-    auto email = ui->email_edit->text();
+    auto email = _ui->email_edit->text();
     // 邮箱地址的正则表达式
     QRegularExpression regex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
     bool match = regex.match(email).hasMatch(); // 执行正则表达式匹配
     if (!match)
     {
         // 提示邮箱不正确
-        AddTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
+        addTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
         return false;
     }
-    DelTipErr(TipErr::TIP_EMAIL_ERR);
+    delTipErr(TipErr::TIP_EMAIL_ERR);
     return true;
 }
 
 bool ResetDialog::checkVerifyValid()
 {
-    auto pass = ui->get_verify_edit->text();
+    auto pass = _ui->get_verify_edit->text();
     if (pass.isEmpty())
     {
-        AddTipErr(TipErr::TIP_VERIFY_ERR, tr("验证码不能为空"));
+        addTipErr(TipErr::TIP_VERIFY_ERR, tr("验证码不能为空"));
         return false;
     }
-    DelTipErr(TipErr::TIP_VERIFY_ERR);
+    delTipErr(TipErr::TIP_VERIFY_ERR);
     return true;
 }
 
-void ResetDialog::AddTipErr(TipErr te, QString tips)
+void ResetDialog::addTipErr(TipErr te, QString tips)
 {
     _tip_errs[te] = tips;
     showTip(tips, false);
 }
 
-void ResetDialog::DelTipErr(TipErr te)
+void ResetDialog::delTipErr(TipErr te)
 {
     _tip_errs.remove(te);
     if (_tip_errs.empty())
     {
-        ui->err_tip->clear();
+        _ui->err_tip->clear();
         return;
     }
     showTip(_tip_errs.first(), false);
@@ -119,26 +125,26 @@ void ResetDialog::showTip(QString str, bool b_ok)
 {
     if (b_ok)
     {
-        ui->err_tip->setProperty("state", "normal");
+        _ui->err_tip->setProperty("state", "normal");
     }
     else
     {
-        ui->err_tip->setProperty("state", "err");
+        _ui->err_tip->setProperty("state", "err");
     }
-    ui->err_tip->setText(str);
-    repolish(ui->err_tip);
+    _ui->err_tip->setText(str);
+    repolish(_ui->err_tip);
 }
 
-void ResetDialog::on_return_btn_clicked()
+void ResetDialog::slot_return_btn_clicked()
 {
-    qDebug() << "on_return_btn_clicked";
-    emit switchLogin();
+    qDebug() << "slot_return_btn_clicked";
+    emit sig_reset_switch_login();
 }
 
-void ResetDialog::on_get_verify_btn_clicked()
+void ResetDialog::slot_get_verify_btn_clicked()
 {
     qDebug() << "receive get verify btn clicked ";
-    auto email = ui->email_edit->text();
+    auto email = _ui->email_edit->text();
     auto bcheck = checkEmailValid();
     if (!bcheck)
     {
@@ -147,8 +153,8 @@ void ResetDialog::on_get_verify_btn_clicked()
     // 发送http请求获取验证码
     QJsonObject json_obj;
     json_obj["email"] = email;
-    HttpMgr::GetInstance().PostHttpReq(
-        QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/get_verify_code"), json_obj,
+    HttpMgr::getInstance().postHttpReq(
+        QUrl(ConfigMgr::getInstance().getUrlPrefix() + "/get_verify_code"), json_obj,
         ReqId::ID_GET_VERIFY_CODE, Modules::RESETMOD);
 }
 
@@ -196,7 +202,7 @@ void ResetDialog::slot_reset_mod_finish(ReqId id, QString res, ErrorCodes err)
         showTip(tr("json解析错误"), false);
         return;
     }
-    // json解析错误
+    // json 解析错误
     if (!jsonDoc.isObject())
     {
         showTip(tr("json解析错误"), false);
@@ -207,7 +213,7 @@ void ResetDialog::slot_reset_mod_finish(ReqId id, QString res, ErrorCodes err)
     return;
 }
 
-void ResetDialog::on_confirm_btn_clicked()
+void ResetDialog::slot_confirm_btn_clicked()
 {
     bool valid = checkUserValid();
     if (!valid)
@@ -231,11 +237,11 @@ void ResetDialog::on_confirm_btn_clicked()
     }
     // 发送http重置用户请求
     QJsonObject json_obj;
-    json_obj["user"] = ui->user_edit->text();
-    json_obj["email"] = ui->email_edit->text();
-    json_obj["passwd"] = xorString(ui->pwd_edit->text());
-    json_obj["verify_code"] = ui->get_verify_edit->text();
-    HttpMgr::GetInstance().PostHttpReq(
-        QUrl(ConfigMgr::GetInstance().GetUrlPrefix() + "/reset_pwd"), json_obj, ReqId::ID_RESET_PWD,
+    json_obj["user"] = _ui->user_edit->text();
+    json_obj["email"] = _ui->email_edit->text();
+    json_obj["passwd"] = xorString(_ui->pwd_edit->text());
+    json_obj["verify_code"] = _ui->get_verify_edit->text();
+    HttpMgr::getInstance().postHttpReq(
+        QUrl(ConfigMgr::getInstance().getUrlPrefix() + "/reset_pwd"), json_obj, ReqId::ID_RESET_PWD,
         Modules::RESETMOD);
 }

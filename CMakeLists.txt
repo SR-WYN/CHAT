@@ -41,7 +41,7 @@ set(PROTO_GEN_FILES
 # --- 4. 源文件 ---
 set(CPP_SOURCES
     main.cpp
-    mainwindow.cpp
+    MainWindow.cpp
     LoginDialog.cpp
     RegisterDialog.cpp
     global.cpp

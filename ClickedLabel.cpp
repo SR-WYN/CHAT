@@ -32,7 +32,7 @@ void ClickedLabel::mousePressEvent(QMouseEvent *ev)
             repolish(this);
             update();
         }
-        emit clicked();
+        emit sig_label_clicked();
     }
     QLabel::mousePressEvent(ev);
 }

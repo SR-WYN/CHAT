@@ -8,7 +8,10 @@ class RegisterDialog;
 class ResetDialog;
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui
+{
+class MainWindow;
+}
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -19,12 +22,13 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 public slots:
-    void slotSwitchReg();
-    void slotSwitchLogin();
-    void slotSwitchReset();
-    void slotSwitchLoginFromReset();
+    void slot_login_dlg_switch_register();
+    void slot_register_dlg_switch_login();
+    void slot_login_dlg_switch_reset();
+    void slot_reset_dlg_switch_login();
+
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow *_ui;
     LoginDialog *_login_dlg;
     RegisterDialog *_reg_dlg;
     ResetDialog *_reset_dlg;
