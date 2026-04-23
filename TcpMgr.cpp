@@ -33,7 +33,6 @@ TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), 
             {
                 // 检查缓冲区的数据是否足够解析出消息头
                 if (_buffer.size() < static_cast<int>(sizeof(quint16) * 2))
-                    ;
                 {
                     return;
                 }
