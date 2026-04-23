@@ -50,6 +50,7 @@ set(CPP_SOURCES
     TimerBtn.cpp
     ClickedLabel.cpp
     ResetDialog.cpp
+    TcpMgr.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 

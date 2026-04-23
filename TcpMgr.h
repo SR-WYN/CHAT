@@ -10,7 +10,7 @@ class TcpMgr : public QObject, public Singleton<TcpMgr>
     friend class Singleton<TcpMgr>;
 
 public:
-    ~TcpMgr();
+    ~TcpMgr() override;
 
 private:
     TcpMgr();

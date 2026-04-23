@@ -69,6 +69,8 @@ void LoginDialog::initHttpHandlers()
         si.host = jsonObj["host"].toString();
         si.port = jsonObj["port"].toString();
         si.token = jsonObj["token"].toString();
+        _uid = si.uid;
+        _token = si.token;
 
         qDebug() << "email is " << email << "\n uid is " << si.uid << "\n host is " << si.host
                  << "\n Port is " << si.port << "\n Token is " << si.token;

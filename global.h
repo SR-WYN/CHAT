@@ -23,8 +23,8 @@ enum ReqId
     ID_REG_USER = 1002,        // 注册用户
     ID_RESET_PWD = 1003,       // 重置密码
     ID_LOGIN_USER = 1004,      // 登录用户
-    ID_CHAT_LOGIN = 1005,      // 聊天登录
-    ID_CHAT_LOGIN_RSP = 1006, // 登录响应
+    ID_CHAT_LOGIN = 2001,      // 聊天登录
+    ID_CHAT_LOGIN_RSP = 2002,  // 登录响应
 };
 
 enum Modules
