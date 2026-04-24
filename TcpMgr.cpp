@@ -1,4 +1,5 @@
 #include "TcpMgr.h"
+#include "UserMgr.h"
 #include "global.h"
 #include <QJsonDocument>
 #include <cstdint>
@@ -113,6 +114,10 @@ void TcpMgr::initHandlers()
             emit sig_login_failed(err);
             return;
         }
+
+        UserMgr::getInstance().setUid(json_obj["uid"].toInt());
+        UserMgr::getInstance().setName(json_obj["name"].toString());
+        UserMgr::getInstance().setToken(json_obj["token"].toString());
 
         emit sig_switch_chatdlg();
     });

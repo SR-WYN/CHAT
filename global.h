@@ -37,8 +37,20 @@ enum Modules
 enum ErrorCodes
 {
     SUCCESS = 0,
-    ERR_JSON = 1,    // json解析失败
-    ERR_NETWORK = 2, // 网络错误
+    ERR_JSON = 1,    // 客户端json解析失败
+    ERR_NETWORK = 2, // 客户端网络错误
+    ERROR_JSON = 1001,        // 服务端JSON解析错误
+    RPCFAILED = 1002,         // 服务端RPC请求错误
+    VERIFY_EXPIRED = 1003,    // 验证码过期
+    VERIFY_CODE_ERROR = 1004, // 验证码错误
+    USER_EXIST = 1005,        // 用户已存在
+    PASSWD_ERROR = 1006,      // 密码错误
+    EMAIL_NOT_MATCH = 1007,   // 邮箱不匹配
+    PASSWD_UP_FAILED = 1008,  // 密码更新失败
+    PASSWD_INVALID = 1009,    // 密码无效
+    PASSWD_NOT_MATCH = 1010,  // 密码不匹配
+    UID_INVALID = 1011,       // 用户不存在
+    TOKEN_INVALID = 1012,     // 令牌无效
 };
 
 enum TipErr

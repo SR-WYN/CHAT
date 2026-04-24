@@ -58,7 +58,23 @@ void LoginDialog::initHttpHandlers()
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
         {
-            showTip(tr("参数错误"), false);
+            QString tip = tr("登录失败，请稍后重试");
+            switch (error)
+            {
+            case ErrorCodes::PASSWD_NOT_MATCH:
+                tip = tr("邮箱或密码错误");
+                break;
+            case ErrorCodes::ERROR_JSON:
+                tip = tr("请求参数错误");
+                break;
+            case ErrorCodes::RPCFAILED:
+                tip = tr("服务暂时不可用，请稍后重试");
+                break;
+            default:
+                tip = tr("登录失败，错误码: %1").arg(error);
+                break;
+            }
+            showTip(tip, false);
             enableBtn(true);
             return;
         }
@@ -240,7 +256,7 @@ void LoginDialog::slot_tcp_con_success(bool bsuccess)
         QString json_string = doc.toJson(QJsonDocument::Indented);
 
         // 发送tcp请求给chat server
-        TcpMgr::getInstance().sig_send_data(ReqId::ID_CHAT_LOGIN, json_string);
+        emit TcpMgr::getInstance().sig_send_data(ReqId::ID_CHAT_LOGIN, json_string);
     }
     else
     {
@@ -252,6 +268,6 @@ void LoginDialog::slot_tcp_con_success(bool bsuccess)
 void LoginDialog::slot_login_failed(int err)
 {
     QString relust = QString("登陆失败, err is %1").arg(err);
-    showTip(relust,false);
+    showTip(relust, false);
     enableBtn(true);
 }

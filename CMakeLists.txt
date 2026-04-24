@@ -51,6 +51,7 @@ set(CPP_SOURCES
     ClickedLabel.cpp
     ResetDialog.cpp
     TcpMgr.cpp
+    UserMgr.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
