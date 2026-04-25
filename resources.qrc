@@ -16,11 +16,6 @@
         <file>res/filedir_hover.png</file>
         <file>res/filedir.png</file>
         <file>res/filedir_press.png</file>
-        <file>res/head_1.png</file>
-        <file>res/head_2.png</file>
-        <file>res/head_3.png</file>
-        <file>res/head_4.png</file>
-        <file>res/head_5.png</file>
         <file>res/icon.ico</file>
         <file>res/login.png</file>
         <file>res/style/style.qss</file>
@@ -28,5 +23,12 @@
         <file>res/unvisible.png</file>
         <file>res/visible_hover.png</file>
         <file>res/visible.png</file>
+        <file>res/search.png</file>
+        <file>res/empty.png</file>
+        <file>res/head_1.png</file>
+        <file>res/head_2.png</file>
+        <file>res/head_3.png</file>
+        <file>res/head_4.png</file>
+        <file>res/head_5.png</file>
     </qresource>
 </RCC>

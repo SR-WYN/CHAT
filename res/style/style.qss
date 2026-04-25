@@ -117,18 +117,20 @@ ChatDialog {
   outline: none;
 }
 
-#chat_user_list::item {
-  height: 64px;
-  padding-left: 10px;
+#chat_user_list::item:focus {
+  border: none;
+  outline: none;
 }
 
 #chat_user_list::item:selected {
-  background-color: #c7c6c5; /* 选中时的浅灰色 */
+  background-color: #d3d7d4; /* 选中时的浅灰色 */
   border: none;
 }
 
 #chat_user_list::item:hover {
-  background-color: #d9d8d7;
+  background-color: #cecfd0;
+  border: none;
+  outline: none;
 }
 
 /* 顶部标题栏 */
@@ -211,4 +213,145 @@ ChatDialog {
 
 #add_btn[state="press"] {
   border-image: url(:/res/add_friend_hover.png);
+}
+
+/* 搜索区域的背景容器 */
+#search_widget {
+  background-color: #f7f7f7;
+}
+
+/* 搜索输入框 */
+#search_edit {
+  background-color: #e2e2e2; /* 浅灰色背景 */
+  color: #333333; /* 深色文字 */
+  border: 1px solid #e2e2e2; /* 边框与背景同色，防止锯齿 */
+}
+
+/* 垂直滚动条 */
+QScrollBar:vertical {
+  width: 8px;
+  background: transparent;
+  margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+  background: #c1c1c1;
+  border-radius: 4px;
+  min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+  background: #a8a8a8;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+  height: 0px;
+  width: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+  background: none;
+}
+
+/* 水平滚动条 */
+QScrollBar:horizontal {
+  height: 8px;
+  background: transparent;
+  margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:horizontal {
+  background: #c1c1c1;
+  border-radius: 4px;
+  min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+  background: #a8a8a8;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+  height: 0px;
+  width: 0px;
+}
+
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+  background: none;
+}
+
+/* 聊天数据区域 */
+#chat_data_list {
+  background-color: #f5f5f5;
+}
+
+/* 登录对话框样式优化 */
+LoginDialog {
+  background-color: #f5f5f5;
+}
+
+/* 注册对话框样式优化 */
+RegisterDialog {
+  background-color: #f5f5f5;
+}
+
+/* 重置密码对话框样式优化 */
+ResetDialog {
+  background-color: #f5f5f5;
+}
+
+/* 按钮通用样式 */
+QPushButton {
+  font-family: "Microsoft YaHei";
+  font-size: 14px;
+}
+
+/* 标签通用样式 */
+QLabel {
+  font-family: "Microsoft YaHei";
+}
+
+/* 输入框通用样式 */
+QLineEdit {
+  font-family: "Microsoft YaHei";
+  font-size: 14px;
+  padding: 5px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+QLineEdit:focus {
+  border-color: #07c160;
+  outline: none;
+}
+
+/* 文本编辑框通用样式 */
+QTextEdit {
+  font-family: "Microsoft YaHei";
+  font-size: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+QTextEdit:focus {
+  border-color: #07c160;
+  outline: none;
+}
+
+/* 列表项样式优化 */
+QListWidget::item {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+QListWidget::item:hover {
+  background-color: #f5f5f5;
+}
+
+QListWidget::item:selected {
+  background-color: #e8f4ea;
+  color: #07c160;
 }

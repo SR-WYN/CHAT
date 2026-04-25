@@ -77,3 +77,20 @@ struct ServerInfo
     QString token;
     int uid;
 };
+
+enum ChatUIMode
+{
+    SEARCH_MODE,
+    CHAT_MODE,
+    CONTACT_MODE,
+};
+
+enum ListItemType 
+{
+    CHAT_USER_ITEM,// 聊天用户
+    CONTACT_USER_ITEM,// 联系人用户
+    SEARCH_USER_ITEM,// 搜索到的用户
+    ADD_TIP_USER_ITEM,// 提示添加用户
+    INVALID_ITEM,//不可点击
+    GROUP_ID_ITEM,// 分组提示
+};
