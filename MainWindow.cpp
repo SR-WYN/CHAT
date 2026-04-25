@@ -1,9 +1,12 @@
 #include "MainWindow.h"
+#include "ChatDialog.h"
 #include "LoginDialog.h"
 #include "RegisterDialog.h"
+#include "ResetDialog.h"
+#include "TcpMgr.h"
 #include "ui_MainWindow.h"
 #include <qnamespace.h>
-#include "ResetDialog.h"
+#include <qwidget.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
 {
@@ -20,6 +23,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
             &MainWindow::slot_login_dlg_switch_register);
     connect(_login_dlg, &LoginDialog::sig_login_switch_reset, this,
             &MainWindow::slot_login_dlg_switch_reset);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_switch_chatdlg, this,
+            &MainWindow::slot_chat_dlg_switch_chat);
+            
+    emit TcpMgr::getInstancePtr()->sig_switch_chatdlg();//临时测试用
 }
 
 MainWindow::~MainWindow()
@@ -75,4 +82,15 @@ void MainWindow::slot_reset_dlg_switch_login()
             &MainWindow::slot_login_dlg_switch_reset);
     connect(_login_dlg, &LoginDialog::sig_login_switch_register, this,
             &MainWindow::slot_login_dlg_switch_register);
+}
+
+void MainWindow::slot_chat_dlg_switch_chat()
+{
+    _chat_dlg = new ChatDialog(this);
+    _chat_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    setCentralWidget(_chat_dlg);
+    _chat_dlg->show();
+    _login_dlg->hide();
+    this->setMinimumSize(1050,800);
+    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 }

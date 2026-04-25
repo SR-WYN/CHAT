@@ -1,72 +1,3 @@
-/* 全局背景与字体 */
-QWidget {
-  font-family: "Microsoft YaHei", "Segoe UI";
-  background-color: #ffffff;
-  color: #333333;
-}
-
-/* 侧边栏 - 使用极浅的灰色区分层级 */
-QWidget#sideBar {
-  background-color: #f7f7f7;
-  border-right: 1px solid #e5e5e5;
-}
-
-/* 聊天记录区域 */
-QListWidget#chatArea {
-  background-color: #ffffff;
-  border: none;
-  outline: none;
-}
-
-/* --- 输入框区域：强化视觉边界 --- */
-QTextEdit#messageInput {
-  background-color: #ffffff;
-  border: 1px solid #dcdfe6; /* 明显的浅灰色边框 */
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 14px;
-  color: #303133;
-}
-
-/* 输入框获得焦点时（点击后）的样式 */
-QTextEdit#messageInput:focus {
-  border: 1px solid #409eff; /* 聚焦时变为蓝色，一眼就能看到在哪输入 */
-}
-
-/* 发送按钮 - 典型的现代蓝色风格 */
-QPushButton#sendBtn {
-  background-color: #409eff;
-  color: white;
-  border-radius: 4px;
-  padding: 8px 18px;
-  font-weight: 500;
-}
-
-QPushButton#sendBtn:hover {
-  background-color: #66b1ff;
-}
-
-QPushButton#sendBtn:pressed {
-  background-color: #3a8ee6;
-}
-
-/* 滚动条美化 - 浅色系专用 */
-QScrollBar:vertical {
-  width: 8px;
-  background: transparent;
-  margin: 0px;
-}
-
-QScrollBar::handle:vertical {
-  background: #dcdfe6;
-  border-radius: 4px;
-  min-height: 30px;
-}
-
-QScrollBar::handle:vertical:hover {
-  background: #c0c4cc;
-}
-
 #err_tip[state="normal"] {
   color: green;
 }
@@ -115,4 +46,169 @@ QScrollBar::handle:vertical:hover {
 #forget_label[state="hover"],
 #forget_label[state="selected_hover"] {
   color: blue;
+}
+
+#side_bar {
+  background-color: rgb(46, 46, 46);
+}
+
+/* 主窗口背景 */
+ChatDialog {
+  background-color: #f5f5f5;
+}
+
+/* 左侧窄侧边栏 (类似微信最左侧头像图标区) */
+#side_bar {
+  background-color: #2e2e2e; /* 微信深色侧边栏 */
+  min-width: 60px;
+}
+
+/* 用户列表区域 (中间联系人列表) */
+#chat_user_widget {
+  background-color: #ece9e7;
+  border-right: 1px solid #dcd9d7;
+}
+
+/* 右侧聊天主区域 */
+#chat_data_widget {
+  background-color: #f5f5f5;
+}
+
+#side_head_label {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+#side_chat_label,
+#side_contact_label {
+  padding: 10px;
+  color: #919191;
+}
+
+#side_chat_label:hover,
+#side_contact_label:hover {
+  color: #07c160; /* 微信绿 */
+}
+
+/* 搜索框 */
+#search_edit {
+  background-color: #e2e2e2;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* 加号按钮 */
+#add_btn {
+  background-color: #e2e2e2;
+  border: none;
+  border-radius: 4px;
+  color: #555555;
+  font-weight: bold;
+}
+
+/* 联系人列表 */
+#chat_user_list,
+#search_list {
+  background-color: transparent;
+  border: none;
+  outline: none;
+}
+
+#chat_user_list::item {
+  height: 64px;
+  padding-left: 10px;
+}
+
+#chat_user_list::item:selected {
+  background-color: #c7c6c5; /* 选中时的浅灰色 */
+  border: none;
+}
+
+#chat_user_list::item:hover {
+  background-color: #d9d8d7;
+}
+
+/* 顶部标题栏 */
+#title_widget {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e7e7e7;
+}
+
+#title_label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #181818;
+  padding-left: 15px;
+}
+
+/* 工具栏 (表情、文件图标) */
+#tool_widget {
+  background-color: #f5f5f5;
+  border-top: 1px solid #e7e7e7;
+}
+
+#emoji_label,
+#file_label {
+  padding: 5px;
+  margin-left: 10px;
+}
+
+/* 输入框 */
+#chat_edit {
+  background-color: #f5f5f5;
+  border: none;
+  font-family: "Microsoft YaHei";
+  font-size: 14px;
+  padding: 10px;
+}
+
+/* 发送按钮 (微信标志性绿色) */
+#send_btn {
+  background-color: #e9e9e9;
+  color: #07c160;
+  border: 1px solid #e7e7e7;
+  border-radius: 4px;
+  padding: 5px 20px;
+  font-size: 13px;
+}
+
+#send_btn:hover {
+  background-color: #d2d2d2;
+}
+
+#send_btn:pressed {
+  background-color: #c6c6c6;
+}
+
+/* 接收按钮/其他功能按钮 */
+#receive_btn {
+  background-color: #e9e9e9;
+  color: #07c160;
+  border: 1px solid #e7e7e7;
+  border-radius: 4px;
+  padding: 5px 20px;
+  font-size: 13px;
+}
+
+#receive_btn:hover {
+  background-color: #d2d2d2;
+}
+
+#receive_btn:pressed {
+  background-color: #c6c6c6;
+}
+
+#add_btn[state="normal"] {
+  border-image: url(:/res/add_friend_normal.png);
+}
+
+#add_btn[state="hover"] {
+  border-image: url(:/res/add_friend_hover.png);
+}
+
+#add_btn[state="press"] {
+  border-image: url(:/res/add_friend_hover.png);
 }
