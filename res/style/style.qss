@@ -152,10 +152,28 @@ ChatDialog {
   border-top: 1px solid #e7e7e7;
 }
 
-#emoji_label,
-#file_label {
-  padding: 5px;
-  margin-left: 10px;
+#emoji_label[state="normal"] {
+  border-image: url(:/res/emoji.png);
+}
+
+#emoji_label[state="hover"] {
+  border-image: url(:/res/emoji_hover.png);
+}
+
+#emoji_label[state="press"] {
+  border-image: url(:/res/emoji_press.png);
+}
+
+#file_label[state="normal"] {
+  border-image: url(:/res/filedir.png);
+}
+
+#file_label[state="hover"] {
+  border-image: url(:/res/filedir_hover.png);
+}
+
+#file_label[state="press"] {
+  border-image: url(:/res/filedir_press.png);
 }
 
 /* 输入框 */
@@ -287,6 +305,15 @@ QScrollBar::sub-page:horizontal {
 #chat_data_list {
   background-color: #f5f5f5;
 }
+
+#chat_background {
+  background: #f0f0f0;
+}
+
+#chat_area {
+  border: none;
+}
+
 
 /* 登录对话框样式优化 */
 LoginDialog {

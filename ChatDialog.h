@@ -23,6 +23,8 @@ private:
     ChatUIMode _mode;
     ChatUIMode _state;
     bool _b_loading;
+private:
+    void slot_loading_chat_user();
 };
 
 #endif // CHATDIALOG_H

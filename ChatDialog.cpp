@@ -10,6 +10,8 @@
 #include <qlineedit.h>
 #include <qobject.h>
 #include <qstringliteral.h>
+#include <unistd.h>
+#include "LoadingDialog.h"
 
 ChatDialog::ChatDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::ChatDialog), _mode(ChatUIMode::CHAT_MODE),
@@ -47,6 +49,7 @@ ChatDialog::ChatDialog(QWidget *parent)
     });
 
     showSearch(false);
+    connect(ui->chat_user_list,&ChatUserList::sig_loading_chat_user,this,&ChatDialog::slot_loading_chat_user);
     addChatUserList();
 }
 
@@ -104,4 +107,20 @@ void ChatDialog::addChatUserList()
         ui->chat_user_list->addItem(item);
         ui->chat_user_list->setItemWidget(item, chat_user_wid);
     }
+}
+
+void ChatDialog::slot_loading_chat_user()
+{
+    if (_b_loading)
+    {
+        return;
+    }
+    _b_loading = true;
+    LoadingDialog *loading_dialog = new LoadingDialog(this);
+    loading_dialog->setModal(true);
+    loading_dialog->show();
+    qDebug() << "add new data to list...";
+    addChatUserList();
+    loading_dialog->deleteLater();
+    _b_loading = false;
 }

@@ -30,5 +30,12 @@
         <file>res/head_3.png</file>
         <file>res/head_4.png</file>
         <file>res/head_5.png</file>
+        <file>res/loading.gif</file>
+        <file>res/emoji_hover.png</file>
+        <file>res/emoji_press.png</file>
+        <file>res/emoji.png</file>
+        <file>res/filedir_hover.png</file>
+        <file>res/filedir_press.png</file>
+        <file>res/filedir.png</file>
     </qresource>
 </RCC>

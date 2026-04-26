@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(MY_CONFIG_FILE "config.json")
 
 # --- 1. 寻找包 ---
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Gui)
 # Beast 依赖 system，如果用到多线程可能还需要 thread
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Protobuf REQUIRED)
@@ -58,6 +58,9 @@ set(CPP_SOURCES
     ChatUserList.cpp
     ChatUserWidget.cpp
     ListItemBase.cpp
+    LoadingDialog.cpp
+    ChatPage.cpp
+    ChatView.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
@@ -100,6 +103,7 @@ target_link_libraries(CHAT
     Qt6::Widgets
     Qt6::Network
     Qt6::Core
+    Qt6::Gui
     Boost::system # 建议链接 system
     protobuf::libprotobuf
     gRPC::grpc++ # 通常 C++ 开发主要链接 grpc++
