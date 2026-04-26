@@ -91,6 +91,9 @@ void MainWindow::slot_chat_dlg_switch_chat()
     setCentralWidget(_chat_dlg);
     _chat_dlg->show();
     _login_dlg->hide();
-    this->setMinimumSize(1050,800);
+    // 与 ChatDialog.ui 的最小尺寸一致，避免沿用登录窗的窄宽度导致聊天区被压扁；
+    // 并主动 resize，使“首屏可见区域”等于设计布局，而不只提高 setMinimumSize。
+    this->setMinimumSize(1200, 800);
     this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    this->resize(1200, 800);
 }
