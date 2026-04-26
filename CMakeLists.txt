@@ -61,6 +61,11 @@ set(CPP_SOURCES
     LoadingDialog.cpp
     ChatPage.cpp
     ChatView.cpp
+    BubbleFrame.cpp
+    ChatItemBase.cpp
+    MessageTextEdit.cpp
+    TextBubble.cpp
+    PictureBubble.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 

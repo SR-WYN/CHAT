@@ -37,8 +37,8 @@ enum Modules
 enum ErrorCodes
 {
     SUCCESS = 0,
-    ERR_JSON = 1,    // 客户端json解析失败
-    ERR_NETWORK = 2, // 客户端网络错误
+    ERR_JSON = 1,             // 客户端json解析失败
+    ERR_NETWORK = 2,          // 客户端网络错误
     ERROR_JSON = 1001,        // 服务端JSON解析错误
     RPCFAILED = 1002,         // 服务端RPC请求错误
     VERIFY_EXPIRED = 1003,    // 验证码过期
@@ -85,12 +85,25 @@ enum ChatUIMode
     CONTACT_MODE,
 };
 
-enum ListItemType 
+enum ListItemType
 {
-    CHAT_USER_ITEM,// 聊天用户
-    CONTACT_USER_ITEM,// 联系人用户
-    SEARCH_USER_ITEM,// 搜索到的用户
-    ADD_TIP_USER_ITEM,// 提示添加用户
-    INVALID_ITEM,//不可点击
-    GROUP_ID_ITEM,// 分组提示
+    CHAT_USER_ITEM,    // 聊天用户
+    CONTACT_USER_ITEM, // 联系人用户
+    SEARCH_USER_ITEM,  // 搜索到的用户
+    ADD_TIP_USER_ITEM, // 提示添加用户
+    INVALID_ITEM,      // 不可点击
+    GROUP_ID_ITEM,     // 分组提示
+};
+
+enum class ChatRole
+{
+    SELF,
+    OTHER
+};
+
+struct MsgInfo
+{
+    QString msgFlag;
+    QString content;
+    QPixmap pixmap;
 };
