@@ -10,6 +10,7 @@
 #include <qjsonobject.h>
 #include <qobject.h>
 #include <qtcpsocket.h>
+#include "UserData.h"
 
 TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
 {

@@ -1,8 +1,11 @@
 #pragma once
+#include "SearchList.h"
 #include "Singleton.h"
 #include <QObject>
 #include <QTcpSocket>
 #include <qobject.h>
+
+class SearchInfo;
 
 class TcpMgr : public QObject, public Singleton<TcpMgr>
 {
@@ -32,4 +35,5 @@ signals:
     void sig_send_data(ReqId, QString data);
     void sig_switch_chatdlg();
     void sig_login_failed(int);
+    void sig_user_search(std::shared_ptr<SearchInfo> si);
 };

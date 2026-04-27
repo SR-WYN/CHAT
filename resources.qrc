@@ -37,5 +37,7 @@
         <file>res/filedir_hover.png</file>
         <file>res/filedir_press.png</file>
         <file>res/filedir.png</file>
+        <file>res/red_point.png</file>
+        <file>res/arrow_right.png</file>
     </qresource>
 </RCC>
