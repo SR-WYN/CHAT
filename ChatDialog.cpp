@@ -1,9 +1,11 @@
 #include "ChatDialog.h"
 #include "ChatUserList.h"
 #include "ChatUserWidget.h"
+#include "LoadingDialog.h"
 #include "QAction"
 #include "global.h"
 #include "ui_ChatDialog.h"
+#include <QMouseEvent>
 #include <QRandomGenerator>
 #include <qaction.h>
 #include <qicon.h>
@@ -11,7 +13,6 @@
 #include <qobject.h>
 #include <qstringliteral.h>
 #include <unistd.h>
-#include "LoadingDialog.h"
 
 ChatDialog::ChatDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::ChatDialog), _mode(ChatUIMode::CHAT_MODE),
@@ -49,7 +50,8 @@ ChatDialog::ChatDialog(QWidget *parent)
     });
 
     showSearch(false);
-    connect(ui->chat_user_list,&ChatUserList::sig_loading_chat_user,this,&ChatDialog::slot_loading_chat_user);
+    connect(ui->chat_user_list, &ChatUserList::sig_loading_chat_user, this,
+            &ChatDialog::slot_loading_chat_user);
     addChatUserList();
 
     addLabelGroup(ui->side_chat_label);
@@ -57,10 +59,14 @@ ChatDialog::ChatDialog(QWidget *parent)
     ui->side_chat_label->setSelected(true);
     ui->side_contact_label->setSelected(false);
 
-    connect(ui->side_chat_label,&StateWidget::clicked,this,&ChatDialog::slot_side_chat);
-    connect(ui->side_contact_label,&StateWidget::clicked,this,&ChatDialog::slot_side_contact);
+    connect(ui->side_chat_label, &StateWidget::clicked, this, &ChatDialog::slot_side_chat);
+    connect(ui->side_contact_label, &StateWidget::clicked, this, &ChatDialog::slot_side_contact);
 
-    connect(ui->search_edit,&QLineEdit::textChanged,this,&ChatDialog::slot_text_changed);
+    // 链接搜索框输入变化
+    connect(ui->search_edit, &QLineEdit::textChanged, this, &ChatDialog::slot_text_changed);
+
+    // 安装事件过滤器
+    this->installEventFilter(this);
 }
 
 ChatDialog::~ChatDialog()
@@ -174,5 +180,35 @@ void ChatDialog::slot_text_changed(const QString &str)
     if (!str.isEmpty())
     {
         showSearch(true);
+    }
+}
+
+bool ChatDialog::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        QMouseEvent *mouse_event = static_cast<QMouseEvent *>(event);
+        handleGlobalMousePress(mouse_event);
+    }
+    return QDialog::eventFilter(watched, event);
+}
+
+void ChatDialog::handleGlobalMousePress(QMouseEvent *mouse_event)
+{
+    // 实现点击位置的判断和处理逻辑
+    // 先判断是否处于搜索模式，如果不处于搜索模式则直接返回
+    if (_mode != ChatUIMode::SEARCH_MODE)
+    {
+        return;
+    }
+
+    // 将鼠标点击位置转换为搜索列表坐标系中的位置
+    QPoint posInSearchList = ui->search_list->mapFromGlobal(mouse_event->globalPosition().toPoint());
+    // 判断点击位置是否在聊天列表的范围内
+    if (!ui->search_list->rect().contains(posInSearchList))
+    {
+        // 如果不在聊天列表内，清空输入框
+        ui->search_edit->clear();
+        showSearch(false);
     }
 }

@@ -7,6 +7,7 @@ set(CMAKE_AUTOUIC ON) # 建议加上，处理 .ui 文件
 set(CMAKE_AUTOMOC ON) # 建议加上，处理 Qt 信号槽
 set(CMAKE_AUTORCC ON)
 set(MY_CONFIG_FILE "config.json")
+set(MY_STATIC_DIR "static")
 
 # --- 1. 寻找包 ---
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Gui)
@@ -70,6 +71,7 @@ set(CPP_SOURCES
     SearchList.cpp
     UserData.cpp
     AddUserItem.cpp
+    FindSuccessDialog.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
@@ -98,6 +100,15 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         "${CMAKE_CURRENT_SOURCE_DIR}/${MY_CONFIG_FILE}"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_CONFIG_FILE}"
     COMMENT "Copying config.json to execution directory..."
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E remove_directory
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
+    COMMENT "Copying static resources to execution directory..."
 )
 
 # --- 6. 链接与配置 ---

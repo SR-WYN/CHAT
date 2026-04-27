@@ -1,8 +1,11 @@
 #include "SearchList.h"
+#include "AddUserItem.h"
+#include "FindSuccessDialog.h"
+#include "ListItemBase.h"
 #include "LoadingDialog.h"
 #include "TcpMgr.h"
 #include "UserData.h"
-#include "AddUserItem.h"
+#include "global.h"
 
 SearchList::SearchList(QWidget *parent)
     : QListWidget(parent), _find_dlg(nullptr), _search_edit(nullptr), _send_pending(false)
@@ -23,6 +26,11 @@ SearchList::SearchList(QWidget *parent)
 
 void SearchList::closeFindDlg()
 {
+    if (_find_dlg)
+    {
+        _find_dlg->hide();
+        _find_dlg = nullptr;
+    }
 }
 
 void SearchList::setSearchEdit(QWidget *edit)
@@ -87,6 +95,52 @@ void SearchList::addTipItem()
 
 void SearchList::slot_item_clicked(QListWidgetItem *item)
 {
+    QWidget *widget = this->itemWidget(item);
+    if (!widget)
+    {
+        qDebug() << "slot item clicked widget is nullptr";
+        return;
+    }
+
+    ListItemBase *customItem = qobject_cast<ListItemBase *>(widget);
+    if (!customItem)
+    {
+        qDebug() << "slot item clicked customItem is nullptr";
+        return;
+    }
+
+    auto item_type = customItem->getItemType();
+    if (item_type == ListItemType::INVALID_ITEM)
+    {
+        qDebug() << "slot invalid item clicked";
+        return;
+    }
+
+    if (item_type == ListItemType::ADD_TIP_USER_ITEM)
+    {
+        // if (_send_pending)
+        // {
+        //     return;
+        // }
+        // waitPending(true);
+        // auto search_edit = dynamic_cast<CustomizeEdit*>(_search_edit);
+        // auto uid_str = search_edit->text();
+
+        // QJsonObject json_obj;
+        // json_obj["uid"] = uid_str;
+        // QJsonDocument doc(json_obj);
+        // QString json_string = doc.toJson(QJsonDocument::Indented);
+        // emit TcpMgr::getInstance()->sig_send_data(ReqId::ID_SEARCH_USER_REQ,json_string);
+        // todo ...
+        _find_dlg = std::make_shared<FindSuccessDialog>(this);
+        auto si = std::make_shared<SearchInfo>(0, "wyn", "wyn", "hello world!!!!!!!!", 0);
+        (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
+        _find_dlg->show();
+        return;
+    }
+
+    // 清除弹出框
+    closeFindDlg();
 }
 
 void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)

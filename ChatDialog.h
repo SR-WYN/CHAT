@@ -17,11 +17,13 @@ public:
     explicit ChatDialog(QWidget *parent = nullptr);
     ~ChatDialog() override;
     void addChatUserList();
-
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 private:
     void showSearch(bool bsearch);
     void addLabelGroup(StateWidget *label);
     void clearLabelState(StateWidget *label);
+    void handleGlobalMousePress(QMouseEvent *mouse_event);
     Ui::ChatDialog *ui;
     ChatUIMode _mode;
     ChatUIMode _state;
