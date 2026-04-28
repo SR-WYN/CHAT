@@ -1,4 +1,5 @@
 #include "ChatDialog.h"
+#include "ContactUserList.h"
 #include "ChatUserList.h"
 #include "ChatUserWidget.h"
 #include "LoadingDialog.h"
@@ -50,6 +51,8 @@ ChatDialog::ChatDialog(QWidget *parent)
     });
 
     showSearch(false);
+    // 与侧栏默认「聊天」选中一致，避免 UI currentIndex 仍为好友页导致右侧不对
+    ui->stackedWidget->setCurrentWidget(ui->chat_page);
     connect(ui->chat_user_list, &ChatUserList::sig_loading_chat_user, this,
             &ChatDialog::slot_loading_chat_user);
     addChatUserList();
@@ -61,6 +64,10 @@ ChatDialog::ChatDialog(QWidget *parent)
 
     connect(ui->side_chat_label, &StateWidget::clicked, this, &ChatDialog::slot_side_chat);
     connect(ui->side_contact_label, &StateWidget::clicked, this, &ChatDialog::slot_side_contact);
+
+    connect(ui->con_user_list, &ContactUserList::sig_switch_apply_friend_page, this, [this]() {
+        ui->stackedWidget->setCurrentWidget(ui->friend_apply_page);
+    });
 
     // 链接搜索框输入变化
     connect(ui->search_edit, &QLineEdit::textChanged, this, &ChatDialog::slot_text_changed);

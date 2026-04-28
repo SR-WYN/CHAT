@@ -99,7 +99,9 @@ enum ListItemType
     SEARCH_USER_ITEM,  // 搜索到的用户
     ADD_TIP_USER_ITEM, // 提示添加用户
     INVALID_ITEM,      // 不可点击
-    GROUP_ID_ITEM,     // 分组提示
+    GROUP_TIP_ITEM,    // 分组提示
+    LINE_ITEM,         // 分割线
+    APPLY_FRIEND_ITEM, // 申请好友
 };
 
 enum class ChatRole

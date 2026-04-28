@@ -75,8 +75,14 @@ set(CPP_SOURCES
     AddUserItem.cpp
     FindSuccessDialog.cpp
     ApplyFriend.cpp
+    ApplyFriendPage.cpp
     ClickedOnceLabel.cpp
     FriendLabel.cpp
+    ConUserItem.cpp
+    GroupTipItem.cpp
+    ContactUserList.cpp
+    ApplyFriendItem.cpp
+    ApplyFriendList.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
