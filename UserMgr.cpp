@@ -22,3 +22,13 @@ void UserMgr::setUid(int uid)
 {
     _uid = uid;
 }
+
+int UserMgr::getUid() const
+{
+    return _uid;
+}
+
+QString UserMgr::getName() const
+{
+    return _name;
+}

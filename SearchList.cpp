@@ -2,13 +2,14 @@
 #include "AddUserItem.h"
 #include "FindSuccessDialog.h"
 #include "ListItemBase.h"
-#include "LoadingDialog.h"
 #include "TcpMgr.h"
 #include "UserData.h"
 #include "global.h"
+#include <QLineEdit>
 
 SearchList::SearchList(QWidget *parent)
-    : QListWidget(parent), _find_dlg(nullptr), _search_edit(nullptr), _send_pending(false)
+    : QListWidget(parent), _find_dlg(nullptr), _search_edit(nullptr), _loadingDialog(nullptr),
+      _send_pending(false)
 {
     Q_UNUSED(parent);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -35,6 +36,16 @@ void SearchList::closeFindDlg()
 
 void SearchList::setSearchEdit(QWidget *edit)
 {
+    _search_edit = edit;
+}
+
+void SearchList::triggerSearch()
+{
+    closeFindDlg();
+    _find_dlg = std::make_shared<FindSuccessDialog>(this);
+    auto si = std::make_shared<SearchInfo>(0, "wyn", "wyn", "hello world!!!!!!!!", 0);
+    (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
+    _find_dlg->show();
 }
 
 bool SearchList::eventFilter(QObject *watched, QEvent *event)
@@ -72,6 +83,7 @@ bool SearchList::eventFilter(QObject *watched, QEvent *event)
 
 void SearchList::waitPending(bool pending)
 {
+    _send_pending = pending;
 }
 
 void SearchList::addTipItem()
@@ -118,24 +130,7 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
 
     if (item_type == ListItemType::ADD_TIP_USER_ITEM)
     {
-        // if (_send_pending)
-        // {
-        //     return;
-        // }
-        // waitPending(true);
-        // auto search_edit = dynamic_cast<CustomizeEdit*>(_search_edit);
-        // auto uid_str = search_edit->text();
-
-        // QJsonObject json_obj;
-        // json_obj["uid"] = uid_str;
-        // QJsonDocument doc(json_obj);
-        // QString json_string = doc.toJson(QJsonDocument::Indented);
-        // emit TcpMgr::getInstance()->sig_send_data(ReqId::ID_SEARCH_USER_REQ,json_string);
-        // todo ...
-        _find_dlg = std::make_shared<FindSuccessDialog>(this);
-        auto si = std::make_shared<SearchInfo>(0, "wyn", "wyn", "hello world!!!!!!!!", 0);
-        (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
-        _find_dlg->show();
+        triggerSearch();
         return;
     }
 
@@ -145,4 +140,14 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
 
 void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
 {
+    waitPending(false);
+    closeFindDlg();
+    if (si == nullptr)
+    {
+        return;
+    }
+
+    _find_dlg = std::make_shared<FindSuccessDialog>(this);
+    (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
+    _find_dlg->show();
 }

@@ -50,6 +50,8 @@ moc_*.cpp
 ui_*.h
 qrc_*.cpp
 *.moc
+# 误检出到源码树的 autogen 目录（应只在 build 中出现）
+CHAT_autogen/
 
 # ==========================================
 # 5. 库文件与二进制 (Boost / JsonCpp 等)

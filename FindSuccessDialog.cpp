@@ -1,6 +1,6 @@
 #include "FindSuccessDialog.h"
+#include "ApplyFriend.h"
 #include "ui_FindSuccessDialog.h"
-#include <QDir>
 #include <memory>
 #include "UserData.h"
 
@@ -12,11 +12,7 @@ FindSuccessDialog::FindSuccessDialog(QWidget *parent)
     setWindowTitle("添加");
     // 隐藏对话框标题栏
     setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-    // 获取当前应用程序的路径
-    QString app_path = QCoreApplication::applicationDirPath();
-    QString pix_path = QDir::toNativeSeparators(app_path + QDir::separator() + "static" +
-                                                QDir::separator() + "head_5.png");
-    QPixmap head_pix(pix_path);
+    QPixmap head_pix(":/res/head_5.png");
     head_pix =
         head_pix.scaled(ui->head_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     ui->head_label->setPixmap(head_pix);
@@ -37,6 +33,8 @@ void FindSuccessDialog::setSearchInfo(std::shared_ptr<SearchInfo> si)
 
 void FindSuccessDialog::on_add_friend_btn_clicked()
 {
-    //todo 添加好友
+    auto *apply_friend = new ApplyFriend(this);
+    apply_friend->setSearchInfo(_si);
+    apply_friend->show();
     this->hide();
 }

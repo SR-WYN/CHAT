@@ -73,6 +73,26 @@ ClickLabelState ClickedLabel::getCurState() const
     return _cur_state;
 }
 
+void ClickedLabel::setCurState(ClickLabelState state)
+{
+    _cur_state = state;
+    if (_cur_state == ClickLabelState::NORMAL)
+    {
+        setProperty("state", _normal);
+    }
+    else
+    {
+        setProperty("state", _select_normal);
+    }
+    repolish(this);
+    update();
+}
+
+void ClickedLabel::resetNormalState()
+{
+    setCurState(ClickLabelState::NORMAL);
+}
+
 void ClickedLabel::enterEvent(QEnterEvent *event)
 {
     if (_cur_state == ClickLabelState::NORMAL)

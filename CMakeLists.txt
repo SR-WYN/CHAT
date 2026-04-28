@@ -9,6 +9,9 @@ set(CMAKE_AUTORCC ON)
 set(MY_CONFIG_FILE "config.json")
 set(MY_STATIC_DIR "static")
 
+# 头文件不加入目标源列表：仅由 AUTOMOC 随 .cpp #include 扫描即可，避免与 AUTOUIC 出现 Ninja 依赖环
+# （全量 GLOB 头文件时会偶发 timestamp <-> ui_*.h 循环）
+
 # --- 1. 寻找包 ---
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Gui)
 # Beast 依赖 system，如果用到多线程可能还需要 thread
@@ -21,7 +24,6 @@ qt_standard_project_setup()
 
 # --- 2. 处理辅助文件 ---
 file(GLOB_RECURSE UI_FILES "*.ui")
-file(GLOB_RECURSE HEADERS "*.h" "*.hpp")
 
 # --- 3. 自动编译 Proto (更通用的写法) ---
 set(PROTO_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
@@ -72,13 +74,15 @@ set(CPP_SOURCES
     UserData.cpp
     AddUserItem.cpp
     FindSuccessDialog.cpp
+    ApplyFriend.cpp
+    ClickedOnceLabel.cpp
+    FriendLabel.cpp
     # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
 # --- 5. 构建 ---
 qt_add_executable(CHAT
     ${CPP_SOURCES}
-    ${HEADERS}
     ${UI_FILES}
     ${PROTO_GEN_FILES}
     resources.qrc
@@ -102,14 +106,18 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMENT "Copying config.json to execution directory..."
 )
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove_directory
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
-    COMMENT "Copying static resources to execution directory..."
-)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
+        COMMENT "Copying static resources to execution directory..."
+    )
+else()
+    message(WARNING "Static directory '${MY_STATIC_DIR}' not found, skip static copy step.")
+endif()
 
 # --- 6. 链接与配置 ---
 # 必须把生成的目录加入包含路径，否则代码里 #include "chat.pb.h" 会报错

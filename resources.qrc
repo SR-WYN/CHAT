@@ -39,5 +39,6 @@
         <file>res/filedir.png</file>
         <file>res/red_point.png</file>
         <file>res/arrow_right.png</file>
+        <file>res/tip_close.png</file>
     </qresource>
 </RCC>

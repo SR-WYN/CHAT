@@ -12,6 +12,8 @@ public:
     void setName(const QString& name);
     void setToken(const QString& token);
     void setUid(int uid);
+    int getUid() const;
+    QString getName() const;
 private:
     UserMgr();
     UserMgr(const UserMgr&) = delete;

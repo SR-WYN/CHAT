@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QRegularExpression>
+#include <QString>
 #include <QWidget>
 #include <functional>
 #include <grpcpp/support/server_interceptor.h>
@@ -17,6 +18,10 @@ extern std::function<void(QWidget *)> repolish;
 
 extern std::function<QString(QString)> xorString;
 
+constexpr int TIP_OFFSET = 5;
+constexpr int MIN_APPLY_LABEL_ED_LEN = 110;
+inline const QString ADD_PREFIX = QStringLiteral("添加标签：");
+
 enum ReqId
 {
     ID_GET_VERIFY_CODE = 1001, // 获取验证码
@@ -25,6 +30,8 @@ enum ReqId
     ID_LOGIN_USER = 1004,      // 登录用户
     ID_CHAT_LOGIN = 2001,      // 聊天登录
     ID_CHAT_LOGIN_RSP = 2002,  // 登录响应
+    ID_SEARCH_USER_REQ = 2003, // 搜索用户请求
+    ID_SEARCH_USER_RSP = 2004, // 搜索用户响应
 };
 
 enum Modules

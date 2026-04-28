@@ -122,6 +122,41 @@ void TcpMgr::initHandlers()
 
         emit sig_switch_chatdlg();
     });
+
+    _handlers.insert(ID_SEARCH_USER_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+
+        auto json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            qDebug() << "search rsp json parse failed";
+            emit sig_user_search(nullptr);
+            return;
+        }
+
+        auto json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            qDebug() << "search rsp missing error field";
+            emit sig_user_search(nullptr);
+            return;
+        }
+
+        auto err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "search failed, err is " << err;
+            emit sig_user_search(nullptr);
+            return;
+        }
+
+        auto si = std::make_shared<SearchInfo>(json_obj["uid"].toInt(), json_obj["name"].toString(),
+                                               json_obj["nick"].toString(),
+                                               json_obj["desc"].toString(),
+                                               json_obj["sex"].toInt());
+        emit sig_user_search(si);
+    });
 }
 
 void TcpMgr::handleMsg(ReqId id, int len, QByteArray data)

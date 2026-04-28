@@ -485,3 +485,13 @@ QListWidget::item:selected {
   font-family: "Microsoft YaHei";
   border-radius: 20px;
 }
+
+#tip_close {
+  border-image: url(:/res/tip_close.png);
+}
+
+#FriendLabel {
+  background: #def6e7;
+  color: #48bf56;
+  border-radius: 10px;
+}

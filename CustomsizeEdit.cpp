@@ -1,7 +1,7 @@
 #include "CustomsizeEdit.h"
 #include <qlineedit.h>
 
-CustomsizeEdit::CustomsizeEdit(QWidget *parent) : QLineEdit(parent),_max_len(0)
+CustomsizeEdit::CustomsizeEdit(QWidget *parent) : QLineEdit(parent), _max_len(32767)
 {
     setMaxLength(_max_len);
 }

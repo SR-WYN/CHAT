@@ -18,6 +18,8 @@ public:
     void setState(QString normal = "", QString hover = "", QString press = "",
                   QString select_normal = "", QString select_hover = "", QString select_press = "");
     ClickLabelState getCurState() const;
+    void setCurState(ClickLabelState state);
+    void resetNormalState();
 private:
     QString _normal;
     QString _normal_hover;
