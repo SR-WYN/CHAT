@@ -3,18 +3,20 @@ project(CHAT LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_AUTOUIC ON) # 建议加上，处理 .ui 文件
-set(CMAKE_AUTOMOC ON) # 建议加上，处理 Qt 信号槽
+
+# --- 1. 自动处理配置 ---
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+
+# 性能优化：限制 AUTOMOC 扫描范围，减小内存压力
+set(CMAKE_AUTOMOC_RELAXED_MODE ON)
+
 set(MY_CONFIG_FILE "config.json")
 set(MY_STATIC_DIR "static")
 
-# 头文件不加入目标源列表：仅由 AUTOMOC 随 .cpp #include 扫描即可，避免与 AUTOUIC 出现 Ninja 依赖环
-# （全量 GLOB 头文件时会偶发 timestamp <-> ui_*.h 循环）
-
-# --- 1. 寻找包 ---
+# --- 2. 寻找包 ---
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Gui)
-# Beast 依赖 system，如果用到多线程可能还需要 thread
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
@@ -22,15 +24,15 @@ find_package(jsoncpp REQUIRED)
 
 qt_standard_project_setup()
 
-# --- 2. 处理辅助文件 ---
+# --- 3. 处理辅助文件 ---
 file(GLOB_RECURSE UI_FILES "*.ui")
 
-# --- 3. 自动编译 Proto (更通用的写法) ---
+# --- 4. 自动编译 Proto (增强版) ---
 set(PROTO_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
 set(PROTO_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 file(MAKE_DIRECTORY ${PROTO_GEN_DIR})
 
-# 自动获取 grpc_cpp_plugin 的位置，不要硬编码 /usr/bin
+# 动态获取插件路径，避免硬编码导致的环境差异
 get_target_property(GRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin LOCATION)
 
 set(PROTO_FILE "${PROTO_SRC_DIR}/chat.proto")
@@ -41,7 +43,22 @@ set(PROTO_GEN_FILES
     "${PROTO_GEN_DIR}/chat.grpc.pb.h"
 )
 
-# --- 4. 源文件 ---
+# 使用确定的输出命令，确保依赖链条清晰
+add_custom_command(
+    OUTPUT ${PROTO_GEN_FILES}
+    COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+    ARGS --cpp_out=${PROTO_GEN_DIR}
+         --grpc_out=${PROTO_GEN_DIR}
+         --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
+         -I ${PROTO_SRC_DIR}
+         ${PROTO_FILE}
+    DEPENDS ${PROTO_FILE}
+    COMMENT "Running C++ protocol buffer compiler on ${PROTO_FILE}"
+    VERBATIM
+)
+
+# --- 5. 源文件清单 ---
+# 建议：如果文件很多，手动列出虽然麻烦，但能加快 CMake 预处理速度
 set(CPP_SOURCES
     main.cpp
     MainWindow.cpp
@@ -83,10 +100,9 @@ set(CPP_SOURCES
     ContactUserList.cpp
     ApplyFriendItem.cpp
     ApplyFriendList.cpp
-    # 如果 resources.qrc 没加入到下面的可执行文件里，也可以放这
 )
 
-# --- 5. 构建 ---
+# --- 6. 构建目标 ---
 qt_add_executable(CHAT
     ${CPP_SOURCES}
     ${UI_FILES}
@@ -94,43 +110,26 @@ qt_add_executable(CHAT
     resources.qrc
 )
 
-add_custom_command(
-    OUTPUT ${PROTO_GEN_FILES}
-    COMMAND ${Protobuf_PROTOC_EXECUTABLE}
-    ARGS --cpp_out=${PROTO_GEN_DIR}
-    --grpc_out=${PROTO_GEN_DIR}
-    --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
-    -I ${PROTO_SRC_DIR}
-    ${PROTO_FILE}
-    DEPENDS ${PROTO_FILE}
-)
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+# --- 7. 后置处理 (配置文件与静态资源) ---
+# 使用更现代的 POST_BUILD 方式
+add_custom_command(TARGET CHAT POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/${MY_CONFIG_FILE}"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_CONFIG_FILE}"
-    COMMENT "Copying config.json to execution directory..."
+        "$<TARGET_FILE_DIR:CHAT>/${MY_CONFIG_FILE}"
 )
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}")
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
+    add_custom_command(TARGET CHAT POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${MY_STATIC_DIR}"
-        COMMENT "Copying static resources to execution directory..."
+            "$<TARGET_FILE_DIR:CHAT>/${MY_STATIC_DIR}"
     )
-else()
-    message(WARNING "Static directory '${MY_STATIC_DIR}' not found, skip static copy step.")
 endif()
 
-# --- 6. 链接与配置 ---
-# 必须把生成的目录加入包含路径，否则代码里 #include "chat.pb.h" 会报错
-target_include_directories(CHAT PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${PROTO_GEN_DIR}
-)
+# --- 8. 包含路径与链接 ---
+# 使用 SYSTEM 关键字标记生成代码目录，编译器会减少对这些巨型文件的警告处理，稍微提升速度
+target_include_directories(CHAT SYSTEM PRIVATE ${PROTO_GEN_DIR})
+target_include_directories(CHAT PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(CHAT
     PRIVATE
@@ -138,8 +137,8 @@ target_link_libraries(CHAT
     Qt6::Network
     Qt6::Core
     Qt6::Gui
-    Boost::system # 建议链接 system
+    Boost::system
     protobuf::libprotobuf
-    gRPC::grpc++ # 通常 C++ 开发主要链接 grpc++
-    JsonCpp::JsonCpp # 注意大小写
+    gRPC::grpc++
+    jsoncpp_lib  # 注意：在很多 Linux 发行版中，find_package(jsoncpp) 导出的目标是这个，请根据实际报错调整
 )

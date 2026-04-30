@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_switch_chatdlg, this,
             &MainWindow::slot_chat_dlg_switch_chat);
             
-    emit TcpMgr::getInstancePtr()->sig_switch_chatdlg();//临时测试用
+//     emit TcpMgr::getInstancePtr()->sig_switch_chatdlg();//临时测试用
 }
 
 MainWindow::~MainWindow()
