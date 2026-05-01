@@ -29,9 +29,18 @@ enum ReqId
     ID_RESET_PWD = 1003,       // 重置密码
     ID_LOGIN_USER = 1004,      // 登录用户
     ID_CHAT_LOGIN = 2001,      // 聊天登录
-    ID_CHAT_LOGIN_RSP = 2002,  // 登录响应
+    ID_CHAT_LOGIN_RSP = 2002,  // 聊天登录响应
     ID_SEARCH_USER_REQ = 2003, // 搜索用户请求
     ID_SEARCH_USER_RSP = 2004, // 搜索用户响应
+    ID_ADD_FRIEND_REQ = 2005, // 添加好友请求
+    ID_ADD_FRIEND_RSP = 2006, // 添加好友响应
+    ID_NOTIFY_ADDFRIEND_REQ = 2007, // 通知添加好友请求
+    ID_AUTH_FRIEND_REQ = 2008, // 认证好友请求
+    ID_AUTH_FRIEND_RSP = 2009, // 认证好友响应
+    ID_NOTIFY_AUTH_FRIEDNG_REQ = 2010, // 通知认证好友请求
+    ID_TEXT_CHAT_MSG_REQ = 2011, // 文本聊天消息请求
+    ID_TEXT_CHAT_MSG_RSP = 2012, // 文本聊天消息响应
+    ID_NOTIFY_TEXT_CHAT_MSG_REQ = 2013, // 通知文本聊天消息请求
 };
 
 enum Modules

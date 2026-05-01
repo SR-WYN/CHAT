@@ -121,6 +121,8 @@ void TcpMgr::initHandlers()
         UserMgr::getInstance().setToken(json_obj["token"].toString());
 
         emit sig_switch_chatdlg();
+    
+    
     });
 
     _handlers.insert(ID_SEARCH_USER_RSP, [this](ReqId id, int len, QByteArray data) {

@@ -1,11 +1,16 @@
 #include "SearchList.h"
 #include "AddUserItem.h"
+#include "CustomsizeEdit.h"
+#include "FindFailDialog.h"
 #include "FindSuccessDialog.h"
 #include "ListItemBase.h"
+#include "LoadingDialog.h"
 #include "TcpMgr.h"
 #include "UserData.h"
 #include "global.h"
 #include <QLineEdit>
+#include <memory>
+#include <qjsondocument.h>
 
 SearchList::SearchList(QWidget *parent)
     : QListWidget(parent), _find_dlg(nullptr), _search_edit(nullptr), _loadingDialog(nullptr),
@@ -37,15 +42,6 @@ void SearchList::closeFindDlg()
 void SearchList::setSearchEdit(QWidget *edit)
 {
     _search_edit = edit;
-}
-
-void SearchList::triggerSearch()
-{
-    closeFindDlg();
-    _find_dlg = std::make_shared<FindSuccessDialog>(this);
-    auto si = std::make_shared<SearchInfo>(0, "wyn", "wyn", "hello world!!!!!!!!", 0);
-    (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
-    _find_dlg->show();
 }
 
 bool SearchList::eventFilter(QObject *watched, QEvent *event)
@@ -83,7 +79,19 @@ bool SearchList::eventFilter(QObject *watched, QEvent *event)
 
 void SearchList::waitPending(bool pending)
 {
-    _send_pending = pending;
+    if (pending)
+    {
+        _loadingDialog = new LoadingDialog(this);
+        _loadingDialog->setModal(true);
+        _loadingDialog->show();
+        _send_pending = true;
+    }
+    else
+    {
+        _loadingDialog->hide();
+        _loadingDialog->deleteLater();
+        _send_pending = false;
+    }
 }
 
 void SearchList::addTipItem()
@@ -130,7 +138,18 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
 
     if (item_type == ListItemType::ADD_TIP_USER_ITEM)
     {
-        triggerSearch();
+        if (_send_pending)
+        {
+            return;
+        }
+        waitPending(true);
+        auto search_edit = dynamic_cast<CustomsizeEdit *>(_search_edit);
+        auto uid_str = search_edit->text();
+        QJsonObject json_obj;
+        json_obj["uid"] = uid_str;
+        QJsonDocument doc(json_obj);
+        QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        emit TcpMgr::getInstance().sig_send_data(ReqId::ID_SEARCH_USER_REQ, QString(json_data));
         return;
     }
 
@@ -144,10 +163,16 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
     closeFindDlg();
     if (si == nullptr)
     {
+        qDebug() << "slot_user_search si is nullptr";
+        _find_dlg = std::make_shared<FindFailDialog>(this);
+        _find_dlg->show();
         return;
     }
-
-    _find_dlg = std::make_shared<FindSuccessDialog>(this);
-    (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
+    else
+    {
+        // todo
+        _find_dlg = std::make_shared<FindSuccessDialog>(this);
+        (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
+    }
     _find_dlg->show();
 }

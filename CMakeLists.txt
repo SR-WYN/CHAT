@@ -100,6 +100,7 @@ set(CPP_SOURCES
     ContactUserList.cpp
     ApplyFriendItem.cpp
     ApplyFriendList.cpp
+    FindFailDialog.cpp
 )
 
 # --- 6. 构建目标 ---

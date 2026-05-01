@@ -15,7 +15,6 @@ public:
     SearchList(QWidget *parent = nullptr);
     void closeFindDlg();
     void setSearchEdit(QWidget *edit);
-    void triggerSearch();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;

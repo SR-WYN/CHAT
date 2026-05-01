@@ -72,7 +72,6 @@ ChatDialog::ChatDialog(QWidget *parent)
     // 链接搜索框输入变化
     connect(ui->search_edit, &QLineEdit::textChanged, this, &ChatDialog::slot_text_changed);
     ui->search_list->setSearchEdit(ui->search_edit);
-    connect(ui->search_edit, &QLineEdit::returnPressed, ui->search_list, &SearchList::triggerSearch);
 
     // 安装事件过滤器
     this->installEventFilter(this);
