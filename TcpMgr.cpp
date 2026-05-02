@@ -1,4 +1,5 @@
 #include "TcpMgr.h"
+#include "UserData.h"
 #include "UserMgr.h"
 #include "global.h"
 #include <QJsonDocument>
@@ -10,7 +11,7 @@
 #include <qjsonobject.h>
 #include <qobject.h>
 #include <qtcpsocket.h>
-#include "UserData.h"
+
 
 TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
 {
@@ -83,6 +84,7 @@ TcpMgr::~TcpMgr()
 
 void TcpMgr::initHandlers()
 {
+    // 登录响应
     _handlers.insert(ID_CHAT_LOGIN_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
 
@@ -121,10 +123,9 @@ void TcpMgr::initHandlers()
         UserMgr::getInstance().setToken(json_obj["token"].toString());
 
         emit sig_switch_chatdlg();
-    
-    
     });
 
+    // 搜索用户响应
     _handlers.insert(ID_SEARCH_USER_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
@@ -153,11 +154,81 @@ void TcpMgr::initHandlers()
             return;
         }
 
-        auto si = std::make_shared<SearchInfo>(json_obj["uid"].toInt(), json_obj["name"].toString(),
-                                               json_obj["nick"].toString(),
-                                               json_obj["desc"].toString(),
-                                               json_obj["sex"].toInt());
+        auto si = std::make_shared<SearchInfo>(
+            json_obj["uid"].toInt(), json_obj["name"].toString(), json_obj["nick"].toString(),
+            json_obj["desc"].toString(), json_obj["sex"].toInt());
         emit sig_user_search(si);
+    });
+
+    // 添加好友响应
+    _handlers.insert(ID_ADD_FRIEND_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+
+        auto json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            qDebug() << "add friend rsp json parse failed";
+            emit sig_add_friend_failed(ErrorCodes::ERR_JSON);
+            return;
+        }
+
+        auto json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            qDebug() << "add friend rsp missing error field";
+            emit sig_add_friend_failed(ErrorCodes::ERR_JSON);
+            return;
+        }
+
+        auto err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "add friend failed, err is " << err;
+            emit sig_add_friend_failed(ErrorCodes::ERR_JSON);
+            return;
+        }
+        qDebug() << "get add friend rsp success";
+    });
+
+    // 通知添加好友响应
+    _handlers.insert(ID_NOTIFY_ADDFRIEND_REQ, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+
+        auto json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            qDebug() << "notify add friend rsp json parse failed";
+            return;
+        }
+
+        auto json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            qDebug() << "notify add friend rsp json parse failed";
+            return;
+        }
+
+        auto err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "notify add friend failed, err is " << err;
+            return;
+        }
+
+        int from_uid = json_obj["apply_uid"].toInt();
+        QString from_name = json_obj["name"].toString();
+        QString from_desc = json_obj["desc"].toString();
+        QString from_icon = json_obj["icon"].toString();
+        int from_sex = json_obj["sex"].toInt();
+        QString from_nick = json_obj["nick"].toString();
+
+        auto apply_info = std::make_shared<AddFriendApply>(from_uid, from_name, from_desc,
+                                                           from_icon, from_nick, from_sex);
+        emit sig_friend_apply(apply_info);                                                   
+
+        qDebug() << "notify add friend success";
     });
 }
 
