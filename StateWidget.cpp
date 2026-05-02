@@ -1,8 +1,9 @@
 #include "StateWidget.h"
+#include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPixmap>
 #include <QStyleOption>
-#include <QVBoxLayout>
 
 StateWidget::StateWidget(QWidget *parent) : QWidget(parent), _curstate(ClickLabelState::NORMAL)
 {
@@ -14,13 +15,23 @@ StateWidget::StateWidget(QWidget *parent) : QWidget(parent), _curstate(ClickLabe
 
 void StateWidget::addRedPoint()
 {
-    _red_point = new QLabel();
+    _red_point = new QLabel(this);
     _red_point->setObjectName("red_point");
-    QVBoxLayout *layout = new QVBoxLayout();
+    const QSize badgeSize(50, 50);
+    QPixmap pm(QStringLiteral(":/res/red_point.png"));
+    if (!pm.isNull())
+    {
+        _red_point->setPixmap(
+            pm.scaled(badgeSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+    _red_point->setFixedSize(badgeSize);
     _red_point->setAlignment(Qt::AlignCenter);
-    layout->addWidget(_red_point);
+
+    auto *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    this->setLayout(layout);
+    layout->setSpacing(0);
+    layout->addStretch(1);
+    layout->addWidget(_red_point, 0, Qt::AlignTop | Qt::AlignRight);
     _red_point->setVisible(false);
 }
 
@@ -69,9 +80,9 @@ void StateWidget::setSelected(bool bselected)
     return;
 }
 
-void StateWidget::showRedPoint()
+void StateWidget::showRedPoint(bool bshow)
 {
-    _red_point->setVisible(true);
+    _red_point->setVisible(bshow);
 }
 
 void StateWidget::paintEvent(QPaintEvent *event)

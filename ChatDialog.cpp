@@ -1,19 +1,24 @@
 #include "ChatDialog.h"
-#include "ContactUserList.h"
 #include "ChatUserList.h"
 #include "ChatUserWidget.h"
+#include "ContactUserList.h"
 #include "LoadingDialog.h"
 #include "QAction"
+#include "TcpMgr.h"
+#include "UserData.h"
 #include "global.h"
 #include "ui_ChatDialog.h"
 #include <QMouseEvent>
 #include <QRandomGenerator>
+#include <memory>
 #include <qaction.h>
 #include <qicon.h>
 #include <qlineedit.h>
 #include <qobject.h>
 #include <qstringliteral.h>
 #include <unistd.h>
+#include "UserMgr.h"
+
 
 ChatDialog::ChatDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::ChatDialog), _mode(ChatUIMode::CHAT_MODE),
@@ -75,6 +80,9 @@ ChatDialog::ChatDialog(QWidget *parent)
 
     // 安装事件过滤器
     this->installEventFilter(this);
+
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_friend_apply, this,
+            &ChatDialog::slot_friend_apply);
 }
 
 ChatDialog::~ChatDialog()
@@ -211,7 +219,8 @@ void ChatDialog::handleGlobalMousePress(QMouseEvent *mouse_event)
     }
 
     // 将鼠标点击位置转换为搜索列表坐标系中的位置
-    QPoint posInSearchList = ui->search_list->mapFromGlobal(mouse_event->globalPosition().toPoint());
+    QPoint posInSearchList =
+        ui->search_list->mapFromGlobal(mouse_event->globalPosition().toPoint());
     // 判断点击位置是否在聊天列表的范围内
     if (!ui->search_list->rect().contains(posInSearchList))
     {
@@ -219,4 +228,21 @@ void ChatDialog::handleGlobalMousePress(QMouseEvent *mouse_event)
         ui->search_edit->clear();
         showSearch(false);
     }
+}
+
+void ChatDialog::slot_friend_apply(std::shared_ptr<AddFriendApply> apply)
+{
+    qDebug() << "receive friend apply, apply_info is " << apply->_from_uid << " "
+             << apply->_name << " " << apply->_desc << " " << apply->_icon << " "
+             << apply->_nick << " " << apply->_sex;
+    bool b_already = UserMgr::getInstance().alreadyApply(apply->_from_uid);
+    if (b_already)
+    {
+        qDebug() << "already apply, return";
+        return;
+    }
+    UserMgr::getInstance().addApply(std::make_shared<ApplyInfo>(apply));
+    ui->side_contact_label->showRedPoint(true);// 显示红点
+    ui->con_user_list->showRedPoint(true);// 显示红点
+    ui->friend_apply_page->addNewApply(apply);
 }

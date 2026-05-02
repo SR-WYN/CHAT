@@ -1,11 +1,11 @@
-#include "ApplyFriend.h"
+#include "AuthenFriend.h"
 #include "ClickedLabel.h"
 #include "ClickedOnceLabel.h"
 #include "CustomsizeEdit.h"
 #include "FriendLabel.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
-#include "ui_ApplyFriend.h"
+#include "ui_AuthenFriend.h"
 #include <QDebug>
 #include <QFontMetrics>
 #include <QJsonDocument>
@@ -14,14 +14,13 @@
 #include <QScrollBar>
 #include <algorithm>
 
-
-ApplyFriend::ApplyFriend(QWidget *parent)
-    : QDialog(parent), ui(new Ui::ApplyFriend), _label_point(2, 6)
+AuthenFriend::AuthenFriend(QWidget *parent)
+    : QDialog(parent), ui(new Ui::AuthenFriend), _label_point(2, 6)
 {
     ui->setupUi(this);
     // 隐藏对话框标题栏
     setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-    this->setObjectName("ApplyFriend");
+    this->setObjectName("AuthenFriend");
     this->setModal(true);
     ui->name_edit->setPlaceholderText(tr("恋恋风辰"));
     ui->label_edit->setPlaceholderText("搜索、添加标签");
@@ -39,16 +38,16 @@ ApplyFriend::ApplyFriend(QWidget *parent)
                  "Rust 程序设计", "父与子学Python", "nodejs开发指南", "go 语言开发指南",
                  "游戏伙伴",      "金融投资",       "微信读书",       "拼多多拼友"};
 
-    connect(ui->more_label, &ClickedOnceLabel::clicked, this, &ApplyFriend::slot_more_lb_clicked);
+    connect(ui->more_label, &ClickedOnceLabel::clicked, this, &AuthenFriend::slot_more_lb_clicked);
     initTipLbs();
     // 链接输入标签回车事件
     connect(ui->label_edit, &QLineEdit::returnPressed, this,
-            &ApplyFriend::slot_lb_ed_return_pressed);
-    connect(ui->label_edit, &QLineEdit::textChanged, this, &ApplyFriend::slot_lb_ed_text_changed);
+            &AuthenFriend::slot_lb_ed_return_pressed);
+    connect(ui->label_edit, &QLineEdit::textChanged, this, &AuthenFriend::slot_lb_ed_text_changed);
     connect(ui->label_edit, &QLineEdit::editingFinished, this,
-            &ApplyFriend::slot_lb_ed_editing_finished);
+            &AuthenFriend::slot_lb_ed_editing_finished);
     connect(ui->tip_label, &ClickedOnceLabel::clicked, this,
-            &ApplyFriend::slot_add_friend_label_by_click_tip);
+            &AuthenFriend::slot_add_friend_label_by_click_tip);
 
     ui->scrollArea->horizontalScrollBar()->setHidden(true);
     ui->scrollArea->verticalScrollBar()->setHidden(true);
@@ -56,17 +55,17 @@ ApplyFriend::ApplyFriend(QWidget *parent)
     ui->sure_btn->setState("normal", "hover", "press");
     ui->cancel_btn->setState("normal", "hover", "press");
     // 连接确认和取消按钮的槽函数
-    connect(ui->cancel_btn, &QPushButton::clicked, this, &ApplyFriend::slot_cancel_btn_clicked);
-    connect(ui->sure_btn, &QPushButton::clicked, this, &ApplyFriend::slot_sure_btn_clicked);
+    connect(ui->cancel_btn, &QPushButton::clicked, this, &AuthenFriend::slot_cancel_btn_clicked);
+    connect(ui->sure_btn, &QPushButton::clicked, this, &AuthenFriend::slot_sure_btn_clicked);
 }
 
-ApplyFriend::~ApplyFriend()
+AuthenFriend::~AuthenFriend()
 {
-    qDebug() << "ApplyFriend destruct";
+    qDebug() << "AuthenFriend destruct";
     delete ui;
 }
 
-void ApplyFriend::initTipLbs()
+void AuthenFriend::initTipLbs()
 {
     int lines = 1;
     for (int i = 0; i < _tip_data.size(); i++)
@@ -106,8 +105,8 @@ void ApplyFriend::initTipLbs()
     }
 }
 
-void ApplyFriend::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_point, int text_width,
-                            int text_height)
+void AuthenFriend::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_point, int text_width,
+                             int text_height)
 {
     lb->move(cur_point);
     lb->show();
@@ -117,7 +116,7 @@ void ApplyFriend::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_poi
     next_point.setY(lb->pos().y());
 }
 
-bool ApplyFriend::eventFilter(QObject *obj, QEvent *event)
+bool AuthenFriend::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == ui->scrollArea && event->type() == QEvent::Enter)
     {
@@ -130,16 +129,7 @@ bool ApplyFriend::eventFilter(QObject *obj, QEvent *event)
     return QObject::eventFilter(obj, event);
 }
 
-void ApplyFriend::setSearchInfo(std::shared_ptr<SearchInfo> si)
-{
-    _si = si;
-    auto apply_name = UserMgr::getInstancePtr()->getName();
-    auto bak_name = si->getName();
-    ui->name_edit->setText(apply_name);
-    ui->alias_edit->setText(bak_name);
-}
-
-void ApplyFriend::slot_more_lb_clicked()
+void AuthenFriend::slot_more_lb_clicked()
 {
     qDebug() << "receive more label clicked";
     ui->more_label_widget->hide();
@@ -214,7 +204,7 @@ void ApplyFriend::slot_more_lb_clicked()
     ui->scroll_content->setFixedHeight(ui->scroll_content->height() + diff_height);
 }
 
-void ApplyFriend::resetLabels()
+void AuthenFriend::resetLabels()
 {
     auto max_width = ui->grid_widget->width();
     auto label_height = 0;
@@ -251,7 +241,7 @@ void ApplyFriend::resetLabels()
     }
 }
 
-void ApplyFriend::addLabel(QString name)
+void AuthenFriend::addLabel(QString name)
 {
     if (_friend_labels.find(name) != _friend_labels.end())
     {
@@ -278,7 +268,7 @@ void ApplyFriend::addLabel(QString name)
     _friend_labels[tmp_label->text()] = tmp_label;
     _friend_label_keys.push_back(tmp_label->text());
 
-    connect(tmp_label, &FriendLabel::sig_close, this, &ApplyFriend::slot_remove_friend_label);
+    connect(tmp_label, &FriendLabel::sig_close, this, &AuthenFriend::slot_remove_friend_label);
 
     _label_point.setX(_label_point.x() + tmp_label->width() + 2);
 
@@ -299,7 +289,7 @@ void ApplyFriend::addLabel(QString name)
     }
 }
 
-void ApplyFriend::slot_lb_ed_return_pressed()
+void AuthenFriend::slot_lb_ed_return_pressed()
 {
     if (ui->label_edit->text().isEmpty())
     {
@@ -362,7 +352,7 @@ void ApplyFriend::slot_lb_ed_return_pressed()
     ui->scroll_content->setFixedHeight(ui->scroll_content->height() + diff_height);
 }
 
-void ApplyFriend::slot_remove_friend_label(QString name)
+void AuthenFriend::slot_remove_friend_label(QString name)
 {
     qDebug() << "receive close signal";
 
@@ -407,7 +397,7 @@ void ApplyFriend::slot_remove_friend_label(QString name)
 }
 
 // 点击标已有签添加或删除新联系人的标签
-void ApplyFriend::slot_change_friend_label_by_tip(QString lbtext, ClickLabelState state)
+void AuthenFriend::slot_change_friend_label_by_tip(QString lbtext, ClickLabelState state)
 {
     auto find_iter = _add_labels.find(lbtext);
     if (find_iter == _add_labels.end())
@@ -430,7 +420,7 @@ void ApplyFriend::slot_change_friend_label_by_tip(QString lbtext, ClickLabelStat
     }
 }
 
-void ApplyFriend::slot_lb_ed_text_changed(const QString &text)
+void AuthenFriend::slot_lb_ed_text_changed(const QString &text)
 {
     if (text.isEmpty())
     {
@@ -451,12 +441,12 @@ void ApplyFriend::slot_lb_ed_text_changed(const QString &text)
     ui->input_tip_widget->show();
 }
 
-void ApplyFriend::slot_lb_ed_editing_finished()
+void AuthenFriend::slot_lb_ed_editing_finished()
 {
     ui->input_tip_widget->hide();
 }
 
-void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
+void AuthenFriend::slot_add_friend_label_by_click_tip(QString text)
 {
     int index = text.indexOf(ADD_PREFIX);
     if (index != -1)
@@ -517,14 +507,14 @@ void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
     ui->scroll_content->setFixedHeight(ui->scroll_content->height() + diff_height);
 }
 
-void ApplyFriend::slot_cancel_btn_clicked()
+void AuthenFriend::slot_cancel_btn_clicked()
 {
     qDebug() << "Slot Apply Cancel";
     this->hide();
     deleteLater();
 }
 
-void ApplyFriend::slot_sure_btn_clicked()
+void AuthenFriend::slot_sure_btn_clicked()
 {
     qDebug() << "Slot Apply Sure called";
     QJsonObject json_obj;
@@ -542,7 +532,7 @@ void ApplyFriend::slot_sure_btn_clicked()
         alias_name = ui->alias_edit->placeholderText();
     }
     json_obj["alias_name"] = alias_name;
-    json_obj["touid"] = _si->getUid();
+    json_obj["touid"] = _apply_info->_uid;
     QJsonDocument doc(json_obj);
     QByteArray json_data = doc.toJson(QJsonDocument::Compact);
     // 发送tcp请求给chat server
@@ -550,4 +540,10 @@ void ApplyFriend::slot_sure_btn_clicked()
 
     this->hide();
     deleteLater();
+}
+
+void AuthenFriend::setApplyInfo(std::shared_ptr<ApplyInfo> apply_info)
+{
+    _apply_info = apply_info;
+    ui->alias_edit->setPlaceholderText(apply_info->_name);
 }

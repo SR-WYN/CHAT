@@ -12,7 +12,6 @@
 #include <qobject.h>
 #include <qtcpsocket.h>
 
-
 TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
 {
     QObject::connect(&_socket, &QTcpSocket::connected, [&]() {
@@ -117,11 +116,20 @@ void TcpMgr::initHandlers()
             emit sig_login_failed(err);
             return;
         }
+        auto uid = json_obj["uid"].toInt();
+        auto name = json_obj["name"].toString();
+        auto nick = json_obj["nick"].toString();
+        auto icon = json_obj["icon"].toString();
+        auto sex = json_obj["sex"].toInt();
 
-        UserMgr::getInstance().setUid(json_obj["uid"].toInt());
-        UserMgr::getInstance().setName(json_obj["name"].toString());
+        auto user_info = std::make_shared<UserInfo>(uid, name, nick, icon, sex);
+        UserMgr::getInstance().setUserInfo(user_info);
         UserMgr::getInstance().setToken(json_obj["token"].toString());
 
+        if (json_obj.contains("apply_list"))
+        {
+            UserMgr::getInstance().appendApplyList(json_obj["apply_list"].toArray());
+        }
         emit sig_switch_chatdlg();
     });
 
@@ -226,7 +234,7 @@ void TcpMgr::initHandlers()
 
         auto apply_info = std::make_shared<AddFriendApply>(from_uid, from_name, from_desc,
                                                            from_icon, from_nick, from_sex);
-        emit sig_friend_apply(apply_info);                                                   
+        emit sig_friend_apply(apply_info);
 
         qDebug() << "notify add friend success";
     });

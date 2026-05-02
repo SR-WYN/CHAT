@@ -101,6 +101,7 @@ set(CPP_SOURCES
     ApplyFriendItem.cpp
     ApplyFriendList.cpp
     FindFailDialog.cpp
+    AuthenFriend.cpp
 )
 
 # --- 6. 构建目标 ---

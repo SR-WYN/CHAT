@@ -15,7 +15,7 @@ public:
 
     void setSelected(bool bselected);
     void addRedPoint();
-    void showRedPoint();
+    void showRedPoint(bool bshow);
 
 protected:
     void paintEvent(QPaintEvent *event);

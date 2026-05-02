@@ -1,36 +1,32 @@
-#ifndef APPLYFRIEND_H
-#define APPLYFRIEND_H
+#ifndef AUTHENFRIEND_H
+#define AUTHENFRIEND_H
 
-#include "UserData.h"
-#include "global.h"
 #include <QDialog>
+#include "global.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui
-{
-class ApplyFriend;
-}
+namespace Ui { class AuthenFriend; }
 QT_END_NAMESPACE
 
-class SearchInfo;
-class FriendLabel;
 class ClickedLabel;
-
-class ApplyFriend : public QDialog
+class FriendLabel;
+class SearchInfo;
+class ApplyFriendItem;
+class ApplyInfo;
+class AuthenFriend : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit ApplyFriend(QWidget *parent = nullptr);
-    ~ApplyFriend();
+    explicit AuthenFriend(QWidget *parent = nullptr);
+    ~AuthenFriend();
     void initTipLbs();
     void addTipLbs(ClickedLabel *, QPoint cur_point, QPoint &next_point, int text_width,
                    int text_height);
     bool eventFilter(QObject *obj, QEvent *event);
-    void setSearchInfo(std::shared_ptr<SearchInfo> si);
-
+    void setApplyInfo(std::shared_ptr<ApplyInfo> apply_info);
 private:
-    Ui::ApplyFriend *ui;
+    Ui::AuthenFriend *ui;
     void resetLabels();
 
     //已经创建好的标签
@@ -43,7 +39,7 @@ private:
     void addLabel(QString name);
     std::vector<QString> _tip_data;
     QPoint _tip_cur_point;
-    std::shared_ptr<SearchInfo> _si;
+    std::shared_ptr<ApplyInfo> _apply_info;
 
 private slots:
     void slot_more_lb_clicked();
@@ -57,4 +53,4 @@ private slots:
     void slot_cancel_btn_clicked();
 };
 
-#endif // APPLYFRIEND_H
+#endif // AUTHENFRIEND_H
