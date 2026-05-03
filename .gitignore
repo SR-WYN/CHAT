@@ -78,3 +78,4 @@ desktop.ini
 *.bak
 *~
 ARCHITECTURE_ANALYSIS.md
+CMakeFiles

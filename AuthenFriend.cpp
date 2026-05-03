@@ -5,6 +5,7 @@
 #include "FriendLabel.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
+#include "global.h"
 #include "ui_AuthenFriend.h"
 #include <QDebug>
 #include <QFontMetrics>
@@ -13,6 +14,8 @@
 #include <QLineEdit>
 #include <QScrollBar>
 #include <algorithm>
+#include <qjsondocument.h>
+#include <qstringview.h>
 
 AuthenFriend::AuthenFriend(QWidget *parent)
     : QDialog(parent), ui(new Ui::AuthenFriend), _label_point(2, 6)
@@ -22,9 +25,9 @@ AuthenFriend::AuthenFriend(QWidget *parent)
     setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
     this->setObjectName("AuthenFriend");
     this->setModal(true);
-    ui->name_edit->setPlaceholderText(tr("恋恋风辰"));
-    ui->label_edit->setPlaceholderText("搜索、添加标签");
-    ui->alias_edit->setPlaceholderText("燃烧的胸毛");
+    ui->name_edit->setPlaceholderText(tr("对方看到的我的名称"));
+    ui->label_edit->setPlaceholderText(tr("为好友添加标签"));
+    ui->alias_edit->setPlaceholderText(tr("给好友的备注"));
 
     ui->label_edit->setMaxLength(21);
     ui->label_edit->move(2, 2);
@@ -80,7 +83,7 @@ void AuthenFriend::initTipLbs()
             slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
         });
 
-        QFontMetrics fontMetrics(lb->font());                      // 获取QLabel控件的字体信息
+        QFontMetrics fontMetrics(lb->font()); // 获取QLabel控件的字体信息
         int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
         int textHeight = fontMetrics.height();                     // 获取文本的高度
 
@@ -144,7 +147,7 @@ void AuthenFriend::slot_more_lb_clicked()
     {
         auto added_lb = _add_labels[added_key];
 
-        QFontMetrics fontMetrics(added_lb->font());                  // 获取QLabel控件的字体信息
+        QFontMetrics fontMetrics(added_lb->font()); // 获取QLabel控件的字体信息
         textWidth = fontMetrics.horizontalAdvance(added_lb->text()); // 获取文本的宽度
         textHeight = fontMetrics.height();                           // 获取文本的高度
 
@@ -179,7 +182,7 @@ void AuthenFriend::slot_more_lb_clicked()
             slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
         });
 
-        QFontMetrics fontMetrics(lb->font());                      // 获取QLabel控件的字体信息
+        QFontMetrics fontMetrics(lb->font()); // 获取QLabel控件的字体信息
         int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
         int textHeight = fontMetrics.height();                     // 获取文本的高度
 
@@ -509,35 +512,40 @@ void AuthenFriend::slot_add_friend_label_by_click_tip(QString text)
 
 void AuthenFriend::slot_cancel_btn_clicked()
 {
-    qDebug() << "Slot Apply Cancel";
+    qDebug() << "AuthenFriend: cancel";
     this->hide();
     deleteLater();
 }
 
 void AuthenFriend::slot_sure_btn_clicked()
 {
-    qDebug() << "Slot Apply Sure called";
-    QJsonObject json_obj;
-    auto uid = UserMgr::getInstance().getUid();
-    json_obj["uid"] = uid;
-    auto name = ui->name_edit->text();
-    if (name.isEmpty())
+    qDebug() << "AuthenFriend: confirm auth (accept apply)";
+    if (!_apply_info)
     {
-        name = ui->name_edit->placeholderText();
+        qDebug() << "AuthenFriend: missing apply info";
+        return;
     }
-    json_obj["apply_name"] = name;
-    auto alias_name = ui->alias_edit->text();
-    if (alias_name.isEmpty())
+
+    QJsonObject json_obj;
+    const int self_uid = UserMgr::getInstance().getUid();
+    const int applicant_uid = _apply_info->_uid;
+
+    // 与 ChatServer LogicSystem::authFriendHandler 一致：fromuid=申请人，touid=同意方（当前用户）
+    json_obj["fromuid"] = applicant_uid;
+    json_obj["touid"] = self_uid;
+    QString alias_name = "";
+    if (!ui->alias_edit->text().isEmpty())
+    {
+        alias_name = ui->alias_edit->text();
+    }
+    else
     {
         alias_name = ui->alias_edit->placeholderText();
     }
     json_obj["alias_name"] = alias_name;
-    json_obj["touid"] = _apply_info->_uid;
     QJsonDocument doc(json_obj);
     QByteArray json_data = doc.toJson(QJsonDocument::Compact);
-    // 发送tcp请求给chat server
-    emit TcpMgr::getInstance().sig_send_data(ReqId::ID_ADD_FRIEND_REQ, json_data);
-
+    emit TcpMgr::getInstance().sig_send_data(ReqId::ID_AUTH_FRIEND_REQ, json_data);
     this->hide();
     deleteLater();
 }
@@ -545,5 +553,16 @@ void AuthenFriend::slot_sure_btn_clicked()
 void AuthenFriend::setApplyInfo(std::shared_ptr<ApplyInfo> apply_info)
 {
     _apply_info = apply_info;
-    ui->alias_edit->setPlaceholderText(apply_info->_name);
+    if (!apply_info)
+    {
+        return;
+    }
+
+    const QString my_name = UserMgr::getInstance().getName();
+    ui->name_edit->setText(my_name);
+
+    const QString peer_display =
+        apply_info->_nick.isEmpty() ? apply_info->_name : apply_info->_nick;
+    ui->alias_edit->setText(peer_display);
+    ui->alias_edit->setPlaceholderText(peer_display);
 }

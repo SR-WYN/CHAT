@@ -1,10 +1,17 @@
 #include "ContactUserList.h"
-#include <QRandomGenerator>
-#include <QEvent>
-#include <QWheelEvent>
 #include "ConUserItem.h"
 #include "GroupTipItem.h"
+#include "TcpMgr.h"
+#include "UserData.h"
+#include "UserMgr.h"
+#include <QEvent>
+#include <QRandomGenerator>
 #include <QScrollBar>
+#include <QWheelEvent>
+#include <qdebug.h>
+#include <qlistwidget.h>
+
+
 ContactUserList::ContactUserList(QWidget *parent)
 {
     Q_UNUSED(parent);
@@ -16,12 +23,11 @@ ContactUserList::ContactUserList(QWidget *parent)
     addContactUserList();
     // 连接点击的信号和槽
     connect(this, &QListWidget::itemClicked, this, &ContactUserList::slot_item_clicked);
-    //    //链接对端同意认证后通知的信号
-    //    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_add_auth_friend,this,
-    //            &ContactUserList::slot_add_auth_firend);
-    //    //链接自己点击同意认证后界面刷新
-    //    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_auth_rsp,this,
-    //            &ContactUserList::slot_auth_rsp);
+    // 链接对端同意认证后通知的信号
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_add_auth_friend, this,
+            &ContactUserList::slot_add_auth_firend);
+    // 链接自己点击同意认证后界面刷新
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_auth_rsp, this, &ContactUserList::slot_auth_rsp);
 }
 void ContactUserList::showRedPoint(bool bshow /*= true*/)
 {
@@ -55,28 +61,16 @@ void ContactUserList::addContactUserList()
     _groupitem->setFlags(_groupitem->flags() & ~Qt::ItemIsSelectable);
 
     const QStringList strs = {
-        tr("今天有空一起吃饭吗"),
-        tr("周末打球吗"),
-        tr("晚上语音聊聊项目"),
-        tr("记得看下新需求"),
-        tr("我把资料发你了"),
+        tr("今天有空一起吃饭吗"), tr("周末打球吗"),     tr("晚上语音聊聊项目"),
+        tr("记得看下新需求"),     tr("我把资料发你了"),
     };
     const QStringList heads = {
-        ":/res/head_1.png",
-        ":/res/head_2.png",
-        ":/res/head_3.png",
-        ":/res/head_4.png",
-        ":/res/head_5.png",
+        ":/res/head_1.png", ":/res/head_2.png", ":/res/head_3.png",
+        ":/res/head_4.png", ":/res/head_5.png",
     };
     const QStringList names = {
-        tr("恋恋风辰"),
-        tr("云边有个小卖部"),
-        tr("夏末微凉"),
-        tr("一叶知秋"),
-        tr("橘子汽水"),
-        tr("代码诗人"),
-        tr("晴天不下雨"),
-        tr("山海"),
+        tr("恋恋风辰"), tr("云边有个小卖部"), tr("夏末微凉"),   tr("一叶知秋"),
+        tr("橘子汽水"), tr("代码诗人"),       tr("晴天不下雨"), tr("山海"),
     };
 
     // 创建QListWidgetItem，并设置自定义的widget
@@ -173,4 +167,41 @@ void ContactUserList::slot_item_clicked(QListWidgetItem *item)
         emit sig_switch_friend_info_page();
         return;
     }
+}
+
+void ContactUserList::slot_add_auth_firend(std::shared_ptr<AuthInfo> auth_info)
+{
+    qDebug() << "add auth friend signal received";
+    bool is_friend = UserMgr::getInstance().checkFriendById(auth_info->_uid);
+    if (is_friend)
+    {
+        qDebug() << auth_info->_name << " already is friend";
+        return;
+    }
+    // 添加好友
+    auto *con_user_widget = new ConUserItem;
+    con_user_widget->setInfo(auth_info);
+    QListWidgetItem *item = new QListWidgetItem;
+    item->setSizeHint(con_user_widget->sizeHint());
+    int index = this->row(_groupitem);
+    this->insertItem(index + 1, item);
+    this->setItemWidget(item, con_user_widget);
+}
+void ContactUserList::slot_auth_rsp(std::shared_ptr<AuthRsp> auth_rsp)
+{
+    qDebug() << "auth rsp signal received";
+    bool is_friend = UserMgr::getInstance().checkFriendById(auth_rsp->_uid);
+    if (is_friend)
+    {
+        qDebug() << auth_rsp->_name << " already is friend";
+        return;
+    }
+    // 添加好友（头像使用服务端下发的 icon，与 ChatUserWidget 一致）
+    auto *con_user_widget = new ConUserItem;
+    con_user_widget->setInfo(auth_rsp);
+    QListWidgetItem *item = new QListWidgetItem;
+    item->setSizeHint(con_user_widget->sizeHint());
+    int index = this->row(_groupitem);
+    this->insertItem(index + 1, item);
+    this->setItemWidget(item, con_user_widget);
 }

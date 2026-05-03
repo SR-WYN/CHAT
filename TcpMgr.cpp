@@ -4,10 +4,12 @@
 #include "global.h"
 #include <QJsonDocument>
 #include <cstdint>
+#include <memory>
 #include <qabstractsocket.h>
 #include <qdebug.h>
 #include <qglobal.h>
 #include <qimage.h>
+#include <qjsondocument.h>
 #include <qjsonobject.h>
 #include <qobject.h>
 #include <qtcpsocket.h>
@@ -225,7 +227,9 @@ void TcpMgr::initHandlers()
             return;
         }
 
-        int from_uid = json_obj["apply_uid"].toInt();
+        int from_uid = json_obj.contains(QStringLiteral("applyuid"))
+                           ? json_obj[QStringLiteral("applyuid")].toInt()
+                           : json_obj[QStringLiteral("apply_uid")].toInt();
         QString from_name = json_obj["name"].toString();
         QString from_desc = json_obj["desc"].toString();
         QString from_icon = json_obj["icon"].toString();
@@ -237,6 +241,80 @@ void TcpMgr::initHandlers()
         emit sig_friend_apply(apply_info);
 
         qDebug() << "notify add friend success";
+    });
+
+    // 认证好友响应
+    _handlers.insert(ID_AUTH_FRIEND_RSP,[this](ReqId id,int len,QByteArray data){
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        auto json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            qDebug() << "auth friend rsp json parse failed";
+            return;
+        }
+        auto json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            qDebug() << "auth friend rsp missing error field";
+            return;
+        }
+        auto err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "auth friend failed, err is " << err;
+            return;
+        }
+        auto name = json_obj["name"].toString();
+        QString nick = json_obj["nick"].toString();
+        if (nick.isEmpty())
+        {
+            nick = json_obj["alias_name"].toString();
+        }
+        auto icon = json_obj["icon"].toString();
+        auto sex = json_obj["sex"].toInt();
+        auto uid = json_obj["uid"].toInt();
+        auto rsp = std::make_shared<AuthRsp>(uid, name, nick, icon, sex);
+        qDebug() << "auth friend success";
+        emit sig_auth_rsp(rsp);
+    });
+
+    // 通知认证好友响应
+    _handlers.insert(ID_NOTIFY_AUTH_FRIEND_REQ, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        auto json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            qDebug() << "notify auth friend rsp json parse failed";
+            return;
+        }
+        auto json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            qDebug() << "notify auth friend rsp missing error field";
+            return;
+        }
+        auto err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "notify auth friend failed, err is " << err;
+            return;
+        }
+
+        int from_uid = json_obj["fromuid"].toInt();
+        QString name = json_obj["name"].toString();
+        QString nick = json_obj["nick"].toString();
+        if (nick.isEmpty())
+        {
+            nick = json_obj["alias_name"].toString();
+        }
+        QString icon = json_obj["icon"].toString();
+        int sex = json_obj["sex"].toInt();
+        auto auth_info = std::make_shared<AuthInfo>(from_uid, name, nick, icon, sex);
+
+        qDebug() << "notify auth friend success";
+        emit sig_add_auth_friend(auth_info);
     });
 }
 

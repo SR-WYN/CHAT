@@ -12,6 +12,8 @@ class ChatUserWidget;
 }
 QT_END_NAMESPACE
 
+class UserInfo;
+
 class ChatUserWidget : public ListItemBase
 {
     Q_OBJECT
@@ -21,13 +23,11 @@ public:
     ~ChatUserWidget() override;
 
     QSize sizeHint() const override;
-    void setInfo(QString name,QString head,QString msg);
+    void setInfo(std::shared_ptr<UserInfo> user_info);
 
 private:
     Ui::ChatUserWidget *ui;
-    QString _name;
-    QString _head;
-    QString _msg;
+    std::shared_ptr<UserInfo> _user_info;
 };
 
 #endif // CHATUSERWIDGET_H

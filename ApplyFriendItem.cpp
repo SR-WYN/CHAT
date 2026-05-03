@@ -22,8 +22,12 @@ ApplyFriendItem::~ApplyFriendItem()
 void ApplyFriendItem::SetInfo(std::shared_ptr<ApplyInfo> apply_info)
 {
     _apply_info = apply_info;
-    // 加载图片
-    QPixmap pixmap(_apply_info->_icon);
+    QString icon = _apply_info->_icon;
+    if (icon.isEmpty())
+    {
+        icon = QStringLiteral(":/res/head_1.png");
+    }
+    QPixmap pixmap(icon);
     // 设置图片自动缩放
     ui->icon_label->setPixmap(pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);

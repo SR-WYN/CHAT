@@ -19,8 +19,12 @@ QSize ConUserItem::sizeHint() const
 void ConUserItem::setInfo(std::shared_ptr<AuthInfo> auth_info)
 {
     _info = std::make_shared<UserInfo>(auth_info);
-    // 加载图片
-    QPixmap pixmap(_info->_icon);
+    QString icon = _info->_icon;
+    if (icon.isEmpty())
+    {
+        icon = QStringLiteral(":/res/head_1.png");
+    }
+    QPixmap pixmap(icon);
     // 设置图片自动缩放
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
@@ -30,8 +34,12 @@ void ConUserItem::setInfo(std::shared_ptr<AuthInfo> auth_info)
 void ConUserItem::setInfo(int uid, QString name, QString icon)
 {
     _info = std::make_shared<UserInfo>(uid, name, icon);
-    // 加载图片
-    QPixmap pixmap(_info->_icon);
+    QString resolved = _info->_icon;
+    if (resolved.isEmpty())
+    {
+        resolved = QStringLiteral(":/res/head_1.png");
+    }
+    QPixmap pixmap(resolved);
     // 设置图片自动缩放
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
@@ -41,8 +49,12 @@ void ConUserItem::setInfo(int uid, QString name, QString icon)
 void ConUserItem::setInfo(std::shared_ptr<AuthRsp> auth_rsp)
 {
     _info = std::make_shared<UserInfo>(auth_rsp);
-    // 加载图片
-    QPixmap pixmap(_info->_icon);
+    QString icon = _info->_icon;
+    if (icon.isEmpty())
+    {
+        icon = QStringLiteral(":/res/head_1.png");
+    }
+    QPixmap pixmap(icon);
     // 设置图片自动缩放
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));

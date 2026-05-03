@@ -37,7 +37,7 @@ enum ReqId
     ID_NOTIFY_ADDFRIEND_REQ = 2007, // 通知添加好友请求
     ID_AUTH_FRIEND_REQ = 2008, // 认证好友请求
     ID_AUTH_FRIEND_RSP = 2009, // 认证好友响应
-    ID_NOTIFY_AUTH_FRIEDNG_REQ = 2010, // 通知认证好友请求
+    ID_NOTIFY_AUTH_FRIEND_REQ = 2010, // 通知认证好友请求
     ID_TEXT_CHAT_MSG_REQ = 2011, // 文本聊天消息请求
     ID_TEXT_CHAT_MSG_RSP = 2012, // 文本聊天消息响应
     ID_NOTIFY_TEXT_CHAT_MSG_REQ = 2013, // 通知文本聊天消息请求

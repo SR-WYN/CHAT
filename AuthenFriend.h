@@ -1,8 +1,9 @@
 #ifndef AUTHENFRIEND_H
 #define AUTHENFRIEND_H
 
-#include <QDialog>
+#include "UserData.h"
 #include "global.h"
+#include <QDialog>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class AuthenFriend; }
@@ -10,9 +11,7 @@ QT_END_NAMESPACE
 
 class ClickedLabel;
 class FriendLabel;
-class SearchInfo;
-class ApplyFriendItem;
-class ApplyInfo;
+
 class AuthenFriend : public QDialog
 {
     Q_OBJECT
