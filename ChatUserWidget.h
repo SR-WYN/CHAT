@@ -24,6 +24,7 @@ public:
 
     QSize sizeHint() const override;
     void setInfo(std::shared_ptr<UserInfo> user_info);
+    std::shared_ptr<UserInfo> getUserInfo() const;
 
 private:
     Ui::ChatUserWidget *ui;

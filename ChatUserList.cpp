@@ -1,10 +1,14 @@
 #include "ChatUserList.h"
+#include "UserMgr.h"
 #include <QScrollBar>
+#include <QTimer>
+#include <qcoreapplication.h>
 #include <qevent.h>
 #include <qglobal.h>
 #include <qnamespace.h>
 #include <qscrollbar.h>
-ChatUserList::ChatUserList(QWidget *parent) : QListWidget(parent)
+
+ChatUserList::ChatUserList(QWidget *parent) : QListWidget(parent), _load_pending(false)
 {
     Q_UNUSED(parent);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -41,7 +45,21 @@ bool ChatUserList::eventFilter(QObject *watched, QEvent *event)
         int current_value = scrollbar->value();
         if (max_scroll_value - current_value <= 0)
         {
+            auto b_loaded = UserMgr::getInstance().isLoadChatFinish();
+            if (b_loaded)
+            {
+                return true;
+            }
+            if (_load_pending)
+            {
+                return true;
+            }
             qDebug() << "load more chat user";
+            _load_pending = true;
+            QTimer::singleShot(100, [this]() {
+                _load_pending = false;
+                // QCoreApplication::quit();
+            });
             emit sig_loading_chat_user();
         }
         return true;

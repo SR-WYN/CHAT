@@ -125,3 +125,5 @@ struct MsgInfo
     QString content;
     QPixmap pixmap;
 };
+
+constexpr int CHAT_COUNT_PER_PAGE = 10;

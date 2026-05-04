@@ -31,6 +31,13 @@ public:
     void addFriend(std::shared_ptr<AuthInfo> auth_info);
     std::shared_ptr<FriendInfo> getFriendById(int uid);
     void removeFriend(int uid);
+    void appendFriendList(const QJsonArray& friend_list);
+    std::vector<std::shared_ptr<FriendInfo>> getChatListPerpage();
+    bool isLoadChatFinish();
+    void updateChatLoadedCount();
+    std::vector<std::shared_ptr<FriendInfo>> getContactListPerpage();
+    void updateContactLoadedCount();
+    bool isLoadContactFinish();
 private:
     UserMgr();
     UserMgr(const UserMgr&) = delete;
@@ -39,4 +46,7 @@ private:
     std::unordered_map<int,std::shared_ptr<ApplyInfo>> _apply_list;
     std::shared_ptr<UserInfo> _user_info;
     QMap<int,std::shared_ptr<FriendInfo>> _friend_map;
+    std::vector<std::shared_ptr<FriendInfo>> _friend_list;
+    int _chat_loaded;
+    int _contact_loaded;
 };

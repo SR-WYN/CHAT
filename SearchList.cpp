@@ -11,6 +11,7 @@
 #include <QLineEdit>
 #include <memory>
 #include <qjsondocument.h>
+#include "UserMgr.h"
 
 SearchList::SearchList(QWidget *parent)
     : QListWidget(parent), _find_dlg(nullptr), _search_edit(nullptr), _loadingDialog(nullptr),
@@ -170,7 +171,18 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
     }
     else
     {
-        // todo
+        auto self_uid = UserMgr::getInstance().getUid();
+        if (self_uid == si->getUid())
+        {
+            qDebug() << "don't search myself";
+            return;
+        }
+        bool b_exist = UserMgr::getInstance().checkFriendById(si->getUid());
+        if (b_exist)
+        {
+            emit sig_jump_chat_item(si);
+            return;
+        }
         _find_dlg = std::make_shared<FindSuccessDialog>(this);
         (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
     }

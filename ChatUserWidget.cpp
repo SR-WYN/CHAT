@@ -35,3 +35,8 @@ void ChatUserWidget::setInfo(std::shared_ptr<UserInfo> user_info)
     ui->user_name_label->setText(_user_info->_name);
     ui->user_chat_label->setText(_user_info->_last_msg);
 }
+
+std::shared_ptr<UserInfo> ChatUserWidget::getUserInfo() const
+{
+    return _user_info;
+}

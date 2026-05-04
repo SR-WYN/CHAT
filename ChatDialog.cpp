@@ -4,8 +4,10 @@
 #include "ContactUserList.h"
 #include "LoadingDialog.h"
 #include "QAction"
+#include "SearchList.h"
 #include "TcpMgr.h"
 #include "UserData.h"
+#include "UserMgr.h"
 #include "global.h"
 #include "ui_ChatDialog.h"
 #include <QMouseEvent>
@@ -19,12 +21,11 @@
 #include <qobject.h>
 #include <qstringliteral.h>
 #include <unistd.h>
-#include "UserMgr.h"
-
+#include "ConUserItem.h"
 
 ChatDialog::ChatDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::ChatDialog), _mode(ChatUIMode::CHAT_MODE),
-      _state(ChatUIMode::CHAT_MODE), _b_loading(false)
+      _state(ChatUIMode::CHAT_MODE), _b_loading(false), _cur_chat_uid(0)
 {
     ui->setupUi(this);
     ui->add_btn->setState("normal", "hover", "press");
@@ -84,11 +85,19 @@ ChatDialog::ChatDialog(QWidget *parent)
     this->installEventFilter(this);
 
     // 链接好友申请信号
-    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_friend_apply, this, &ChatDialog::slot_friend_apply);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_friend_apply, this,
+            &ChatDialog::slot_friend_apply);
     // 链接添加好友信号
-    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_add_auth_friend, this, &ChatDialog::slot_add_auth_friend);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_add_auth_friend, this,
+            &ChatDialog::slot_add_auth_friend);
     // 链接认证好友信号
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_auth_rsp, this, &ChatDialog::slot_auth_rsp);
+    // 链接搜索列表跳转聊天项信号
+    connect(ui->search_list, &SearchList::sig_jump_chat_item, this,
+            &ChatDialog::slot_jump_chat_item);
+    // 链接联系人列表加载信号
+    connect(ui->con_user_list, &ContactUserList::sig_loading_contact_user, this,
+            &ChatDialog::slot_loading_contact_user);
 }
 
 ChatDialog::~ChatDialog()
@@ -130,6 +139,28 @@ std::vector<QString> names = {"llfc", "zack", "golang", "cpp", "java", "nodejs",
 
 void ChatDialog::addChatUserList()
 {
+    // 先按照好友列表加载聊天记录
+    auto friend_list = UserMgr::getInstance().getChatListPerpage();
+    if (!friend_list.empty())
+    {
+        for (auto &friend_element : friend_list)
+        {
+            auto find_iter = _chat_item_added.find(friend_element->_uid);
+            if (find_iter != _chat_item_added.end())
+            {
+                continue;
+            }
+            auto *chat_user_widget = new ChatUserWidget();
+            auto user_info = std::make_shared<UserInfo>(friend_element);
+            chat_user_widget->setInfo(user_info);
+            QListWidgetItem *item = new QListWidgetItem;
+            item->setSizeHint(chat_user_widget->sizeHint());
+            ui->chat_user_list->addItem(item);
+            ui->chat_user_list->setItemWidget(item, chat_user_widget);
+            _chat_item_added.insert(friend_element->_uid, item);
+        }
+        UserMgr::getInstance().updateChatLoadedCount();
+    }
     static int limit_max = 0;
     limit_max++;
     if (limit_max > 3)
@@ -156,7 +187,8 @@ void ChatDialog::slot_loading_chat_user()
     loading_dialog->setModal(true);
     loading_dialog->show();
     qDebug() << "add new data to list...";
-    addChatUserList();
+    // addChatUserList();
+    loadMoreChatUser();
     loading_dialog->deleteLater();
     _b_loading = false;
 }
@@ -236,9 +268,9 @@ void ChatDialog::handleGlobalMousePress(QMouseEvent *mouse_event)
 
 void ChatDialog::slot_friend_apply(std::shared_ptr<AddFriendApply> apply)
 {
-    qDebug() << "receive friend apply, apply_info is " << apply->_from_uid << " "
-             << apply->_name << " " << apply->_desc << " " << apply->_icon << " "
-             << apply->_nick << " " << apply->_sex;
+    qDebug() << "receive friend apply, apply_info is " << apply->_from_uid << " " << apply->_name
+             << " " << apply->_desc << " " << apply->_icon << " " << apply->_nick << " "
+             << apply->_sex;
     bool b_already = UserMgr::getInstance().alreadyApply(apply->_from_uid);
     if (b_already)
     {
@@ -246,14 +278,15 @@ void ChatDialog::slot_friend_apply(std::shared_ptr<AddFriendApply> apply)
         return;
     }
     UserMgr::getInstance().addApply(std::make_shared<ApplyInfo>(apply));
-    ui->side_contact_label->showRedPoint(true);// 显示红点
-    ui->con_user_list->showRedPoint(true);// 显示红点
+    ui->side_contact_label->showRedPoint(true); // 显示红点
+    ui->con_user_list->showRedPoint(true);      // 显示红点
     ui->friend_apply_page->addNewApply(apply);
 }
 
 void ChatDialog::slot_add_auth_friend(std::shared_ptr<AuthInfo> auth_info)
 {
-    qDebug() << "receive slot_add_auth_friend uid is " << auth_info->_uid << " name is " << auth_info->_name;
+    qDebug() << "receive slot_add_auth_friend uid is " << auth_info->_uid << " name is "
+             << auth_info->_name;
     auto is_friend = UserMgr::getInstance().checkFriendById(auth_info->_uid);
     if (is_friend)
     {
@@ -261,14 +294,14 @@ void ChatDialog::slot_add_auth_friend(std::shared_ptr<AuthInfo> auth_info)
         return;
     }
     UserMgr::getInstance().addFriend(auth_info);
-    auto* chat_user_widget = new ChatUserWidget;
+    auto *chat_user_widget = new ChatUserWidget;
     auto user_info = std::make_shared<UserInfo>(auth_info);
     chat_user_widget->setInfo(user_info);
     QListWidgetItem *item = new QListWidgetItem;
     item->setSizeHint(chat_user_widget->sizeHint());
     ui->chat_user_list->insertItem(0, item);
     ui->chat_user_list->setItemWidget(item, chat_user_widget);
-    _chat_item_added.insert(auth_info->_uid,item);
+    _chat_item_added.insert(auth_info->_uid, item);
 }
 
 void ChatDialog::slot_auth_rsp(std::shared_ptr<AuthRsp> auth_rsp)
@@ -281,12 +314,140 @@ void ChatDialog::slot_auth_rsp(std::shared_ptr<AuthRsp> auth_rsp)
         return;
     }
     UserMgr::getInstance().addFriend(auth_rsp);
-    auto* chat_user_widget = new ChatUserWidget;
+    auto *chat_user_widget = new ChatUserWidget;
     auto user_info = std::make_shared<UserInfo>(auth_rsp);
     chat_user_widget->setInfo(user_info);
     QListWidgetItem *item = new QListWidgetItem;
     item->setSizeHint(chat_user_widget->sizeHint());
     ui->chat_user_list->insertItem(0, item);
     ui->chat_user_list->setItemWidget(item, chat_user_widget);
-    _chat_item_added.insert(auth_rsp->_uid,item);
+    _chat_item_added.insert(auth_rsp->_uid, item);
+}
+
+void ChatDialog::slot_jump_chat_item(std::shared_ptr<SearchInfo> si)
+{
+    qDebug() << "slot jump chat item";
+    auto find_iter = _chat_item_added.find(si->getUid());
+    if (find_iter == _chat_item_added.end())
+    {
+        auto *chat_user_widget = new ChatUserWidget;
+        auto user_info = std::make_shared<UserInfo>(si);
+        chat_user_widget->setInfo(user_info);
+        QListWidgetItem *item = new QListWidgetItem;
+        item->setSizeHint(chat_user_widget->sizeHint());
+        ui->chat_user_list->insertItem(0, item);
+        ui->chat_user_list->setItemWidget(item, chat_user_widget);
+        return;
+    }
+    qDebug() << "jump chat item,uid is " << si->getUid();
+    ui->chat_user_list->scrollToItem(find_iter.value());
+    ui->side_chat_label->setSelected(true);
+    setSelectChatItem(si->getUid());
+    setSelectChatPage(si->getUid());
+}
+
+void ChatDialog::setSelectChatItem(int uid)
+{
+    if (ui->chat_user_list->count() <= 0)
+    {
+        return;
+    }
+    if (uid == 0)
+    {
+        ui->chat_user_list->setCurrentRow(0);
+        QListWidgetItem *first_item = ui->chat_user_list->item(0);
+        if (!first_item)
+        {
+            return;
+        }
+
+        QWidget *widget = ui->chat_user_list->itemWidget(first_item);
+        if (!widget)
+        {
+            return;
+        }
+
+        auto con_item = qobject_cast<ChatUserWidget *>(widget);
+        if (!con_item)
+        {
+            return;
+        }
+
+        _cur_chat_uid = con_item->getUserInfo()->_uid;
+        return;
+    }
+    auto find_iter = _chat_item_added.find(uid);
+    if (find_iter == _chat_item_added.end())
+    {
+        qDebug() << "uid:" << uid << " not found";
+        ui->chat_user_list->setCurrentRow(0);
+        return;
+    }
+    ui->chat_user_list->setCurrentItem(find_iter.value());
+    _cur_chat_uid = uid;
+}
+
+void ChatDialog::setSelectChatPage(int uid)
+{
+}
+
+void ChatDialog::loadMoreChatUser()
+{
+    auto friend_list = UserMgr::getInstance().getChatListPerpage();
+    if (!friend_list.empty())
+    {
+        for (auto &friend_element : friend_list)
+        {
+            auto find_iter = _chat_item_added.find(friend_element->_uid);
+            if (find_iter != _chat_item_added.end())
+            {
+                continue;
+            }
+            auto *chat_user_widget = new ChatUserWidget();
+            auto user_info = std::make_shared<UserInfo>(friend_element);
+            chat_user_widget->setInfo(user_info);
+            QListWidgetItem *item = new QListWidgetItem;
+            item->setSizeHint(chat_user_widget->sizeHint());
+            ui->chat_user_list->addItem(item);
+            ui->chat_user_list->setItemWidget(item, chat_user_widget);
+            _chat_item_added.insert(friend_element->_uid, item);
+        }
+        UserMgr::getInstance().updateChatLoadedCount();
+    }
+}
+
+void ChatDialog::loadMoreContactUser()
+{
+    auto contact_list = UserMgr::getInstance().getContactListPerpage();
+    if (!contact_list.empty())
+    {
+        for (auto &contact_element : contact_list)
+        {
+            auto *chat_user_widget = new ConUserItem();
+            chat_user_widget->setInfo(contact_element->_uid, contact_element->_name,
+                                     contact_element->_icon);
+            QListWidgetItem *item = new QListWidgetItem;
+            item->setSizeHint(chat_user_widget->sizeHint());
+            ui->con_user_list->addItem(item);
+            ui->con_user_list->setItemWidget(item, chat_user_widget);
+        }
+        UserMgr::getInstance().updateContactLoadedCount();
+    }
+}
+
+void ChatDialog::slot_loading_contact_user()
+{
+    qDebug() << "slot loading contact user";
+    if (_b_loading)
+    {
+        return;
+    }
+    _b_loading = true;
+    LoadingDialog *loading_dialog = new LoadingDialog(this);
+    loading_dialog->setModal(true);
+    loading_dialog->show();
+    qDebug() << "start loading contact user";
+    loadMoreContactUser();
+    loading_dialog->deleteLater();
+    _b_loading = false;
 }

@@ -12,4 +12,6 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 signals:
     void sig_loading_chat_user();
+private:
+    bool _load_pending;
 };
