@@ -5,6 +5,7 @@
 #include <QScrollBar>
 #include <QStyleOption>
 #include <QTimer>
+#include <qboxlayout.h>
 
 ChatView::ChatView(QWidget *parent)
     : QWidget(parent), _chat_list_layout(nullptr), _scroll_area(nullptr), _is_append(false)
@@ -101,4 +102,22 @@ void ChatView::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     // 让样式表背景在自绘 QWidget 上生效。
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
+}
+
+void ChatView::removeAllItem()
+{
+    QVBoxLayout *layout = qobject_cast<QVBoxLayout*>(_scroll_area->widget()->layout());
+    int count = layout->count();
+    for (int i = 0;i<count-1;i++)
+    {
+        QLayoutItem *item =layout->takeAt(0);
+        if (item)
+        {
+            if (QWidget *widget = item->widget())
+            {
+                delete widget;
+            }
+            delete item;
+        }
+    }
 }

@@ -79,5 +79,8 @@ AddFriendApply::AddFriendApply(int from_uid, QString name, QString desc, QString
 // FriendInfo 实现
 void FriendInfo::AppendChatMsgs(const std::vector<std::shared_ptr<TextChatData>> text_vec)
 {
-    _chat_msgs.insert(_chat_msgs.end(), text_vec.begin(), text_vec.end());
+    for (auto &msg : text_vec)
+    {
+        _chat_msgs.push_back(msg);
+    }
 }

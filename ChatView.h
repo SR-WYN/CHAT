@@ -12,7 +12,7 @@ public:
     void appendChatItem(QWidget *item);
     void prependChatItem(QWidget *item);
     void insertChatItem(QWidget *before, QWidget *item);
-
+    void removeAllItem();
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     void paintEvent(QPaintEvent *event) override;

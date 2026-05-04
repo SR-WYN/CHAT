@@ -18,6 +18,7 @@ public:
     void setUid(int uid);
     int getUid() const;
     QString getName() const;
+    std::shared_ptr<UserInfo> getUserInfo() const;
     bool alreadyApply(std::shared_ptr<ApplyInfo> apply_info);
     bool alreadyApply(int from_uid);
     void addApply(std::shared_ptr<ApplyInfo> apply_info);
@@ -38,6 +39,7 @@ public:
     std::vector<std::shared_ptr<FriendInfo>> getContactListPerpage();
     void updateContactLoadedCount();
     bool isLoadContactFinish();
+    void appendFriendChatMsg(int uid, const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
 private:
     UserMgr();
     UserMgr(const UserMgr&) = delete;

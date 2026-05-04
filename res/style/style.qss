@@ -546,3 +546,85 @@ QListWidget::item:selected {
   color: #48bf56;
   border-radius: 10px;
 }
+
+/* ClickedBtn 按下时 property 为 "press"（见 ClickedBtn.cpp），勿写 pressed；与 #receive_btn 同色阶 */
+#msg_chat_button[state="normal"] {
+    border: 1px solid transparent;
+    background-color: transparent;
+    background-image: url(":/res/msg_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#msg_chat_button[state="hover"] {
+    border: 1px solid #bcbcbc;
+    background-color: #d2d2d2;
+    background-image: url(":/res/msg_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#msg_chat_button[state="press"] {
+    border: 1px solid #a8a8a8;
+    background-color: #c6c6c6;
+    background-image: url(":/res/msg_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#video_chat_button[state="normal"] {
+    border: 1px solid transparent;
+    background-color: transparent;
+    background-image: url(":/res/video_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#video_chat_button[state="hover"] {
+    border: 1px solid #bcbcbc;
+    background-color: #d2d2d2;
+    background-image: url(":/res/video_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#video_chat_button[state="press"] {
+    border: 1px solid #a8a8a8;
+    background-color: #c6c6c6;
+    background-image: url(":/res/video_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#voice_chat_button[state="normal"] {
+    border: 1px solid transparent;
+    background-color: transparent;
+    background-image: url(":/res/voice_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#voice_chat_button[state="hover"] {
+    border: 1px solid #bcbcbc;
+    background-color: #d2d2d2;
+    background-image: url(":/res/voice_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}
+
+#voice_chat_button[state="press"] {
+    border: 1px solid #a8a8a8;
+    background-color: #c6c6c6;
+    background-image: url(":/res/voice_chat.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 4px;
+}

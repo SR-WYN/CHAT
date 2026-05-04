@@ -120,8 +120,8 @@ void TcpMgr::initHandlers()
         }
         auto uid = json_obj["uid"].toInt();
         auto name = json_obj["name"].toString();
-        QString nick = json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString()
-                                                                 : QString();
+        QString nick =
+            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
         if (nick.isEmpty())
         {
             nick = name;
@@ -178,8 +178,8 @@ void TcpMgr::initHandlers()
 
         const QString icon =
             json_obj.contains(QStringLiteral("icon")) ? json_obj["icon"].toString() : QString();
-        QString snick = json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString()
-                                                                 : QString();
+        QString snick =
+            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
         const QString sname = json_obj["name"].toString();
         if (snick.isEmpty())
         {
@@ -255,25 +255,24 @@ void TcpMgr::initHandlers()
         QString from_desc = json_obj["desc"].toString();
         QString from_icon = json_obj["icon"].toString();
         int from_sex = json_obj["sex"].toInt();
-        QString from_nick = json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString()
-                                                                     : QString();
+        QString from_nick =
+            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
         if (from_nick.isEmpty())
         {
             from_nick = from_name;
         }
-        const QString from_alias =
-            json_obj.contains(QStringLiteral("alias_name")) ? json_obj["alias_name"].toString()
-                                                             : QString();
-        auto apply_info = std::make_shared<AddFriendApply>(from_uid, from_name, from_desc,
-                                                           from_icon, from_nick, from_sex,
-                                                           from_alias);
+        const QString from_alias = json_obj.contains(QStringLiteral("alias_name"))
+                                       ? json_obj["alias_name"].toString()
+                                       : QString();
+        auto apply_info = std::make_shared<AddFriendApply>(
+            from_uid, from_name, from_desc, from_icon, from_nick, from_sex, from_alias);
         emit sig_friend_apply(apply_info);
 
         qDebug() << "notify add friend success";
     });
 
     // 认证好友响应
-    _handlers.insert(ID_AUTH_FRIEND_RSP,[this](ReqId id,int len,QByteArray data){
+    _handlers.insert(ID_AUTH_FRIEND_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         auto json_doc = QJsonDocument::fromJson(data);
@@ -295,15 +294,15 @@ void TcpMgr::initHandlers()
             return;
         }
         auto name = json_obj["name"].toString();
-        QString nick = json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString()
-                                                                : QString();
+        QString nick =
+            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
         if (nick.isEmpty())
         {
             nick = name;
         }
-        const QString alias =
-            json_obj.contains(QStringLiteral("alias_name")) ? json_obj["alias_name"].toString()
-                                                            : QString();
+        const QString alias = json_obj.contains(QStringLiteral("alias_name"))
+                                  ? json_obj["alias_name"].toString()
+                                  : QString();
         auto icon = json_obj["icon"].toString();
         auto sex = json_obj["sex"].toInt();
         auto uid = json_obj["uid"].toInt();
@@ -337,21 +336,80 @@ void TcpMgr::initHandlers()
 
         int from_uid = json_obj["fromuid"].toInt();
         QString name = json_obj["name"].toString();
-        QString nick = json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString()
-                                                                : QString();
+        QString nick =
+            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
         if (nick.isEmpty())
         {
             nick = name;
         }
-        const QString alias =
-            json_obj.contains(QStringLiteral("alias_name")) ? json_obj["alias_name"].toString()
-                                                            : QString();
+        const QString alias = json_obj.contains(QStringLiteral("alias_name"))
+                                  ? json_obj["alias_name"].toString()
+                                  : QString();
         QString icon = json_obj["icon"].toString();
         int sex = json_obj["sex"].toInt();
         auto auth_info = std::make_shared<AuthInfo>(from_uid, name, nick, icon, sex, alias);
 
         qDebug() << "notify auth friend success";
         emit sig_add_auth_friend(auth_info);
+    });
+
+    // 通知文本聊天
+    _handlers.insert(ID_TEXT_CHAT_MSG_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        qDebug() << "handle id is " << id << " data is " << data;
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull())
+        {
+            qDebug() << "notify text chat rsp json parse failed";
+            return;
+        }
+
+        QJsonObject json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            int err = ErrorCodes::ERR_JSON;
+            qDebug() << "notify text chat rsp json parse failed, err is " << err;
+            return;
+        }
+
+        int err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "notify text chat failed, err is " << err;
+            return;
+        }
+        qDebug() << "notify text chat success";
+    });
+
+    // 通知文本聊天响应
+    _handlers.insert(ID_NOTIFY_TEXT_CHAT_MSG_REQ, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        qDebug() << "handle id is " << id << " data is " << data;
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull())
+        {
+            qDebug() << "notify text chat rsp json parse failed";
+        }
+        QJsonObject json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            int err = ErrorCodes::ERR_JSON;
+            qDebug() << "notify text chat rsp json parse failed, err is " << err;
+            return;
+        }
+        auto err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "notify text chat failed, err is " << err;
+            return;
+        }
+        qDebug() << "Receive Text Chat Notify Success";
+        auto msg_ptr =
+            std::make_shared<TextChatMsg>(json_obj["fromuid"].toInt(), json_obj["touid"].toInt(),
+                                          json_obj["text_array"].toArray());
+        emit sig_text_chat_msg(msg_ptr);
     });
 }
 

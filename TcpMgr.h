@@ -9,6 +9,7 @@ class SearchInfo;
 class AddFriendApply;
 class AuthInfo;
 class AuthRsp;
+class TextChatMsg;
 
 class TcpMgr : public QObject, public Singleton<TcpMgr>
 {
@@ -43,4 +44,5 @@ signals:
     void sig_friend_apply(std::shared_ptr<AddFriendApply> apply_info);
     void sig_auth_rsp(std::shared_ptr<AuthRsp> auth_rsp);
     void sig_add_auth_friend(std::shared_ptr<AuthInfo> auth_info);
+    void sig_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
 };

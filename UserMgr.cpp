@@ -251,3 +251,19 @@ bool UserMgr::isLoadContactFinish()
     }
     return false;
 }
+
+std::shared_ptr<UserInfo> UserMgr::getUserInfo() const
+{
+    return _user_info;
+}
+
+void UserMgr::appendFriendChatMsg(int friend_id, const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
+{
+    auto find_iter = _friend_map.find(friend_id);
+    if (find_iter == _friend_map.end())
+    {
+        qDebug() << "not found friend uid is " << friend_id;
+        return;
+    }
+    find_iter.value()->AppendChatMsgs(msg_vec);
+}

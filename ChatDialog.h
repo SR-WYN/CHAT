@@ -26,10 +26,11 @@ private:
     void addLabelGroup(StateWidget *label);
     void clearLabelState(StateWidget *label);
     void handleGlobalMousePress(QMouseEvent *mouse_event);
-    void setSelectChatItem(int uid);
-    void setSelectChatPage(int uid);
+    void setSelectChatItem(int uid = 0);
+    void setSelectChatPage(int uid = 0);
     void loadMoreChatUser();
     void loadMoreContactUser();
+    void updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
     Ui::ChatDialog *ui;
     ChatUIMode _mode;
     ChatUIMode _state;
@@ -49,6 +50,10 @@ private slots:
     void slot_jump_chat_item(std::shared_ptr<SearchInfo> si);
     void slot_loading_contact_user();
     void slot_friend_info_page(std::shared_ptr<UserInfo> user_info);
+    void slot_jump_chat_item_from_infopage(std::shared_ptr<UserInfo> user_info);
+    void slot_item_clicked(QListWidgetItem *item);
+    void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg);
+    void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
 };
 
 #endif // CHATDIALOG_H
