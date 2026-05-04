@@ -102,6 +102,7 @@ set(CPP_SOURCES
     ApplyFriendList.cpp
     FindFailDialog.cpp
     AuthenFriend.cpp
+    FriendInfoPage.cpp
 )
 
 # --- 6. 构建目标 ---

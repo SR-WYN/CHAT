@@ -29,7 +29,7 @@ void ConUserItem::setInfo(std::shared_ptr<AuthInfo> auth_info)
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_info->_name);
+    ui->user_name_label->setText(_info->displayName());
 }
 void ConUserItem::setInfo(int uid, QString name, QString icon)
 {
@@ -44,7 +44,7 @@ void ConUserItem::setInfo(int uid, QString name, QString icon)
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_info->_name);
+    ui->user_name_label->setText(_info->displayName());
 }
 void ConUserItem::setInfo(std::shared_ptr<AuthRsp> auth_rsp)
 {
@@ -59,7 +59,7 @@ void ConUserItem::setInfo(std::shared_ptr<AuthRsp> auth_rsp)
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_info->_name);
+    ui->user_name_label->setText(_info->displayName());
 }
 void ConUserItem::showRedPoint(bool show)
 {
@@ -71,4 +71,9 @@ void ConUserItem::showRedPoint(bool show)
     {
         ui->red_point->hide();
     }
+}
+
+std::shared_ptr<UserInfo> ConUserItem::getUserInfo() const
+{
+    return _info;
 }

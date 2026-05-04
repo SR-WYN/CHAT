@@ -32,7 +32,7 @@ void ChatUserWidget::setInfo(std::shared_ptr<UserInfo> user_info)
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_user_info->_name);
+    ui->user_name_label->setText(_user_info->displayName());
     ui->user_chat_label->setText(_user_info->_last_msg);
 }
 

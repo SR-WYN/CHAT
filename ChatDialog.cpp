@@ -1,6 +1,7 @@
 #include "ChatDialog.h"
 #include "ChatUserList.h"
 #include "ChatUserWidget.h"
+#include "ConUserItem.h"
 #include "ContactUserList.h"
 #include "LoadingDialog.h"
 #include "QAction"
@@ -21,11 +22,11 @@
 #include <qobject.h>
 #include <qstringliteral.h>
 #include <unistd.h>
-#include "ConUserItem.h"
+
 
 ChatDialog::ChatDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::ChatDialog), _mode(ChatUIMode::CHAT_MODE),
-      _state(ChatUIMode::CHAT_MODE), _b_loading(false), _cur_chat_uid(0)
+      _state(ChatUIMode::CHAT_MODE), _b_loading(false), _cur_chat_uid(0),_last_widget(nullptr)
 {
     ui->setupUi(this);
     ui->add_btn->setState("normal", "hover", "press");
@@ -98,6 +99,9 @@ ChatDialog::ChatDialog(QWidget *parent)
     // 链接联系人列表加载信号
     connect(ui->con_user_list, &ContactUserList::sig_loading_contact_user, this,
             &ChatDialog::slot_loading_contact_user);
+    // 链接跳转聊天项信号
+    connect(ui->con_user_list, &ContactUserList::sig_switch_friend_info_page, this,
+            &ChatDialog::slot_friend_info_page);
 }
 
 ChatDialog::~ChatDialog()
@@ -129,13 +133,6 @@ void ChatDialog::showSearch(bool bsearch)
         _mode = ChatUIMode::CONTACT_MODE;
     }
 }
-
-std::vector<QString> strs = {"hello world !", "nice to meet u", "New year，new life",
-                             "You have to love yourself",
-                             "My love is written in the wind ever since the whole world is you"};
-std::vector<QString> heads = {":/res/head_1.png", ":/res/head_2.png", ":/res/head_3.png",
-                              ":/res/head_4.png", ":/res/head_5.png"};
-std::vector<QString> names = {"llfc", "zack", "golang", "cpp", "java", "nodejs", "python", "rust"};
 
 void ChatDialog::addChatUserList()
 {
@@ -269,7 +266,7 @@ void ChatDialog::handleGlobalMousePress(QMouseEvent *mouse_event)
 void ChatDialog::slot_friend_apply(std::shared_ptr<AddFriendApply> apply)
 {
     qDebug() << "receive friend apply, apply_info is " << apply->_from_uid << " " << apply->_name
-             << " " << apply->_desc << " " << apply->_icon << " " << apply->_nick << " "
+             << " " << apply->_desc << " " << apply->_icon << " "
              << apply->_sex;
     bool b_already = UserMgr::getInstance().alreadyApply(apply->_from_uid);
     if (b_already)
@@ -425,7 +422,7 @@ void ChatDialog::loadMoreContactUser()
         {
             auto *chat_user_widget = new ConUserItem();
             chat_user_widget->setInfo(contact_element->_uid, contact_element->_name,
-                                     contact_element->_icon);
+                                      contact_element->_icon);
             QListWidgetItem *item = new QListWidgetItem;
             item->setSizeHint(chat_user_widget->sizeHint());
             ui->con_user_list->addItem(item);
@@ -450,4 +447,12 @@ void ChatDialog::slot_loading_contact_user()
     loadMoreContactUser();
     loading_dialog->deleteLater();
     _b_loading = false;
+}
+
+void ChatDialog::slot_friend_info_page(std::shared_ptr<UserInfo> user_info)
+{
+    qDebug() << "receive switch friend info page sig";
+    _last_widget = ui->friend_info_page;
+    ui->stackedWidget->setCurrentWidget(ui->friend_info_page);
+    ui->friend_info_page->setInfo(user_info);
 }

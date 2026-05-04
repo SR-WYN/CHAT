@@ -133,7 +133,7 @@ void ContactUserList::slot_item_clicked(QListWidgetItem *item)
         return;
     }
     // 对自定义widget进行操作， 将item 转化为基类ListItemBase
-    ListItemBase *customItem = qobject_cast<ListItemBase *>(widget);
+    ConUserItem *customItem = qobject_cast<ConUserItem *>(widget);
     if (!customItem)
     {
         qDebug() << "slot item clicked widget is nullptr";
@@ -158,7 +158,7 @@ void ContactUserList::slot_item_clicked(QListWidgetItem *item)
         // 创建对话框，提示用户
         qDebug() << "contact user item clicked ";
         // 跳转到好友申请界面
-        emit sig_switch_friend_info_page();
+        emit sig_switch_friend_info_page(customItem->getUserInfo());
         return;
     }
 }

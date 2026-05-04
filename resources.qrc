@@ -40,5 +40,8 @@
         <file>res/red_point.png</file>
         <file>res/arrow_right.png</file>
         <file>res/tip_close.png</file>
+        <file>res/video_chat.png</file>
+        <file>res/msg_chat.png</file>
+        <file>res/voice_chat.png</file>
     </qresource>
 </RCC>

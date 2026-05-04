@@ -1,4 +1,5 @@
 #include "UserMgr.h"
+#include <QJsonObject>
 #include <memory>
 #include <vector>
 
@@ -78,16 +79,24 @@ void UserMgr::setUserInfo(std::shared_ptr<UserInfo> user_info)
 
 void UserMgr::appendApplyList(const QJsonArray& apply_list)
 {
-    for (const QJsonValue &value:apply_list)
+    for (const QJsonValue &value : apply_list)
     {
-        auto name = value["name"].toString();
-        auto desc = value["desc"].toString();
-        auto icon = value["icon"].toString();
-        auto nick = value["nick"].toString();
-        auto sex = value["sex"].toInt();
-        auto uid = value["uid"].toInt();
-        auto status = value["status"].toInt();
-        auto apply_info = std::make_shared<ApplyInfo>(uid, name, desc, icon, nick, sex, status);
+        const QJsonObject jo = value.toObject();
+        auto name = jo["name"].toString();
+        auto desc = jo["desc"].toString();
+        auto icon = jo["icon"].toString();
+        QString nick = jo.contains(QStringLiteral("nick")) ? jo["nick"].toString() : QString();
+        if (nick.isEmpty())
+        {
+            nick = name;
+        }
+        auto sex = jo["sex"].toInt();
+        auto uid = jo["uid"].toInt();
+        auto status = jo["status"].toInt();
+        const QString apply_alias =
+            jo.contains(QStringLiteral("alias_name")) ? jo["alias_name"].toString() : QString();
+        auto apply_info =
+            std::make_shared<ApplyInfo>(uid, name, desc, icon, nick, sex, status, apply_alias);
         _apply_list[uid] = apply_info;
     }
 }
@@ -127,15 +136,20 @@ void UserMgr::removeFriend(int uid)
 
 void UserMgr::appendFriendList(const QJsonArray& friend_list)
 {
-    for (const QJsonValue &value:friend_list)
+    for (const QJsonValue &value : friend_list)
     {
-        auto name = value["name"].toString();
-        auto desc = value["desc"].toString();
-        auto icon = value["icon"].toString();
-        auto nick = value["nick"].toString();
-        auto sex = value["sex"].toInt();
-        auto uid = value["uid"].toInt();
-        auto alias_name = value["alias_name"].toString();
+        const QJsonObject jo = value.toObject();
+        auto name = jo["name"].toString();
+        auto desc = jo["desc"].toString();
+        auto icon = jo["icon"].toString();
+        QString nick = jo.contains(QStringLiteral("nick")) ? jo["nick"].toString() : QString();
+        if (nick.isEmpty())
+        {
+            nick = name;
+        }
+        auto sex = jo["sex"].toInt();
+        auto uid = jo["uid"].toInt();
+        auto alias_name = jo["alias_name"].toString();
 
         auto info = std::make_shared<FriendInfo>(uid, name, nick, icon, sex, desc, alias_name);
         _friend_list.push_back(info);
