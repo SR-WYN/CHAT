@@ -67,9 +67,9 @@ void FriendRequestDialog::setupUIForMode()
     if (_mode == Mode::Apply)
     {
         setWindowTitle("添加");
-        ui->name_edit->setPlaceholderText(tr("恋恋风辰"));
+        ui->name_edit->setPlaceholderText(tr("我的名称"));
         ui->label_edit->setPlaceholderText("搜索、添加标签");
-        ui->alias_edit->setPlaceholderText("燃烧的胸毛");
+        ui->alias_edit->setPlaceholderText(tr("备注名"));
         ui->apply_label->setText("发送添加好友申请：");
     }
     else

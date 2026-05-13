@@ -178,19 +178,6 @@ void ChatDialog::addChatUserList()
         }
         UserMgr::getInstance().updateChatLoadedCount();
     }
-    static int limit_max = 0;
-    limit_max++;
-    if (limit_max > 3)
-    {
-        return;
-    }
-    auto *chat_user_widget = new ChatUserWidget;
-    auto user_info = std::make_shared<UserInfo>(3, "SR", ":/res/head_4.png");
-    chat_user_widget->setInfo(user_info);
-    QListWidgetItem *item = new QListWidgetItem;
-    item->setSizeHint(chat_user_widget->sizeHint());
-    ui->chat_user_list->addItem(item);
-    ui->chat_user_list->setItemWidget(item, chat_user_widget);
 }
 
 void ChatDialog::slot_loading_chat_user()
