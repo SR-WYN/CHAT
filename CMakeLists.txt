@@ -78,7 +78,6 @@ set(CPP_SOURCES
     ChatUserList.cpp
     ChatUserWidget.cpp
     ListItemBase.cpp
-    LoadingDialog.cpp
     ChatPage.cpp
     ChatView.cpp
     BubbleFrame.cpp
@@ -90,7 +89,6 @@ set(CPP_SOURCES
     SearchList.cpp
     UserData.cpp
     AddUserItem.cpp
-    FindSuccessDialog.cpp
     ApplyFriend.cpp
     ApplyFriendPage.cpp
     ClickedOnceLabel.cpp
@@ -100,9 +98,9 @@ set(CPP_SOURCES
     ContactUserList.cpp
     ApplyFriendItem.cpp
     ApplyFriendList.cpp
-    FindFailDialog.cpp
     AuthenFriend.cpp
     FriendInfoPage.cpp
+    StatusDialog.cpp
 )
 
 # --- 6. 构建目标 ---

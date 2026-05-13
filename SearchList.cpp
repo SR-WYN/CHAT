@@ -1,10 +1,7 @@
 #include "SearchList.h"
 #include "AddUserItem.h"
 #include "CustomsizeEdit.h"
-#include "FindFailDialog.h"
-#include "FindSuccessDialog.h"
 #include "ListItemBase.h"
-#include "LoadingDialog.h"
 #include "TcpMgr.h"
 #include "UserData.h"
 #include "global.h"
@@ -36,6 +33,7 @@ void SearchList::closeFindDlg()
     if (_find_dlg)
     {
         _find_dlg->hide();
+        delete _find_dlg;
         _find_dlg = nullptr;
     }
 }
@@ -82,7 +80,8 @@ void SearchList::waitPending(bool pending)
 {
     if (pending)
     {
-        _loadingDialog = new LoadingDialog(this);
+        _loadingDialog = new StatusDialog(this);
+        _loadingDialog->setMode(StatusDialog::StatusMode::Loading);
         _loadingDialog->setModal(true);
         _loadingDialog->show();
         _send_pending = true;
@@ -165,7 +164,8 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
     if (si == nullptr)
     {
         qDebug() << "slot_user_search si is nullptr";
-        _find_dlg = std::make_shared<FindFailDialog>(this);
+        _find_dlg = new StatusDialog(this);
+        _find_dlg->setMode(StatusDialog::StatusMode::Fail);
         _find_dlg->show();
         return;
     }
@@ -183,8 +183,9 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
             emit sig_jump_chat_item(si);
             return;
         }
-        _find_dlg = std::make_shared<FindSuccessDialog>(this);
-        (std::dynamic_pointer_cast<FindSuccessDialog>(_find_dlg))->setSearchInfo(si);
+        _find_dlg = new StatusDialog(this);
+        _find_dlg->setMode(StatusDialog::StatusMode::Success);
+        _find_dlg->setSearchInfo(si);
     }
     _find_dlg->show();
 }

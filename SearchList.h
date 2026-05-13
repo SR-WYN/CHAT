@@ -1,5 +1,5 @@
 #pragma once
-#include "LoadingDialog.h"
+#include "StatusDialog.h"
 #include <QEvent>
 #include <QListWidget>
 #include <QScrollBar>
@@ -8,7 +8,6 @@
 #include <qtmetamacros.h>
 
 class SearchInfo;
-class LoadingDialog;
 
 class SearchList : public QListWidget
 {
@@ -25,9 +24,9 @@ private:
     void waitPending(bool pending = true);
     bool _send_pending;
     void addTipItem();
-    std::shared_ptr<QDialog> _find_dlg;
+    StatusDialog *_find_dlg;
     QWidget *_search_edit;
-    LoadingDialog *_loadingDialog;
+    StatusDialog *_loadingDialog;
 
 private slots:
     void slot_item_clicked(QListWidgetItem *item);

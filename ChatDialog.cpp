@@ -5,9 +5,9 @@
 #include "ContactUserList.h"
 #include "FriendInfoPage.h"
 #include "ListItemBase.h"
-#include "LoadingDialog.h"
 #include "QAction"
 #include "SearchList.h"
+#include "StatusDialog.h"
 #include "TcpMgr.h"
 #include "UserData.h"
 #include "UserMgr.h"
@@ -200,7 +200,8 @@ void ChatDialog::slot_loading_chat_user()
         return;
     }
     _b_loading = true;
-    LoadingDialog *loading_dialog = new LoadingDialog(this);
+    StatusDialog *loading_dialog = new StatusDialog(this);
+    loading_dialog->setMode(StatusDialog::StatusMode::Loading);
     loading_dialog->setModal(true);
     loading_dialog->show();
     qDebug() << "add new data to list...";
@@ -508,7 +509,8 @@ void ChatDialog::slot_loading_contact_user()
         return;
     }
     _b_loading = true;
-    LoadingDialog *loading_dialog = new LoadingDialog(this);
+    StatusDialog *loading_dialog = new StatusDialog(this);
+    loading_dialog->setMode(StatusDialog::StatusMode::Loading);
     loading_dialog->setModal(true);
     loading_dialog->show();
     qDebug() << "start loading contact user";
