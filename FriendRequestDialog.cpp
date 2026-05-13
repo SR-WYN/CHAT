@@ -1,11 +1,11 @@
-#include "ApplyFriend.h"
+#include "FriendRequestDialog.h"
 #include "ClickedLabel.h"
 #include "ClickedOnceLabel.h"
 #include "CustomsizeEdit.h"
 #include "FriendLabel.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
-#include "ui_ApplyFriend.h"
+#include "ui_FriendRequestDialog.h"
 #include <QDebug>
 #include <QFontMetrics>
 #include <QJsonDocument>
@@ -14,22 +14,19 @@
 #include <QScrollBar>
 #include <algorithm>
 
-
-ApplyFriend::ApplyFriend(QWidget *parent)
-    : QDialog(parent), ui(new Ui::ApplyFriend), _label_point(2, 6)
+FriendRequestDialog::FriendRequestDialog(QWidget *parent, Mode mode)
+    : QDialog(parent), ui(new Ui::FriendRequestDialog), _mode(mode), _label_point(2, 6)
 {
     ui->setupUi(this);
-    // 隐藏对话框标题栏
     setWindowFlags(windowFlags() | Qt::FramelessWindowHint);
-    this->setObjectName("ApplyFriend");
+    this->setObjectName("FriendRequestDialog");
     this->setModal(true);
-    ui->name_edit->setPlaceholderText(tr("恋恋风辰"));
-    ui->label_edit->setPlaceholderText("搜索、添加标签");
-    ui->alias_edit->setPlaceholderText("燃烧的胸毛");
+
+    setupUIForMode();
 
     ui->label_edit->setMaxLength(21);
     ui->label_edit->move(2, 2);
-    ui->label_edit->setFixedHeight(20);
+    ui->label_edit->setFixedHeight(35);
     ui->label_edit->setMaxLength(10);
     ui->input_tip_widget->hide();
 
@@ -39,39 +36,83 @@ ApplyFriend::ApplyFriend(QWidget *parent)
                  "Rust 程序设计", "父与子学Python", "nodejs开发指南", "go 语言开发指南",
                  "游戏伙伴",      "金融投资",       "微信读书",       "拼多多拼友"};
 
-    connect(ui->more_label, &ClickedOnceLabel::clicked, this, &ApplyFriend::slot_more_lb_clicked);
+    connect(ui->more_label, &ClickedOnceLabel::clicked, this, &FriendRequestDialog::slot_more_lb_clicked);
     initTipLbs();
-    // 链接输入标签回车事件
     connect(ui->label_edit, &QLineEdit::returnPressed, this,
-            &ApplyFriend::slot_lb_ed_return_pressed);
-    connect(ui->label_edit, &QLineEdit::textChanged, this, &ApplyFriend::slot_lb_ed_text_changed);
+            &FriendRequestDialog::slot_lb_ed_return_pressed);
+    connect(ui->label_edit, &QLineEdit::textChanged, this,
+            &FriendRequestDialog::slot_lb_ed_text_changed);
     connect(ui->label_edit, &QLineEdit::editingFinished, this,
-            &ApplyFriend::slot_lb_ed_editing_finished);
+            &FriendRequestDialog::slot_lb_ed_editing_finished);
     connect(ui->tip_label, &ClickedOnceLabel::clicked, this,
-            &ApplyFriend::slot_add_friend_label_by_click_tip);
+            &FriendRequestDialog::slot_add_friend_label_by_click_tip);
 
     ui->scrollArea->horizontalScrollBar()->setHidden(true);
     ui->scrollArea->verticalScrollBar()->setHidden(true);
     ui->scrollArea->installEventFilter(this);
     ui->sure_btn->setState("normal", "hover", "press");
     ui->cancel_btn->setState("normal", "hover", "press");
-    // 连接确认和取消按钮的槽函数
-    connect(ui->cancel_btn, &QPushButton::clicked, this, &ApplyFriend::slot_cancel_btn_clicked);
-    connect(ui->sure_btn, &QPushButton::clicked, this, &ApplyFriend::slot_sure_btn_clicked);
+    connect(ui->cancel_btn, &QPushButton::clicked, this, &FriendRequestDialog::slot_cancel_btn_clicked);
+    connect(ui->sure_btn, &QPushButton::clicked, this, &FriendRequestDialog::slot_sure_btn_clicked);
 }
 
-ApplyFriend::~ApplyFriend()
+FriendRequestDialog::~FriendRequestDialog()
 {
-    qDebug() << "ApplyFriend destruct";
+    qDebug() << "FriendRequestDialog destruct";
     delete ui;
 }
 
-void ApplyFriend::initTipLbs()
+void FriendRequestDialog::setupUIForMode()
+{
+    if (_mode == Mode::Apply)
+    {
+        setWindowTitle("添加");
+        ui->name_edit->setPlaceholderText(tr("恋恋风辰"));
+        ui->label_edit->setPlaceholderText("搜索、添加标签");
+        ui->alias_edit->setPlaceholderText("燃烧的胸毛");
+        ui->apply_label->setText("发送添加好友申请：");
+    }
+    else
+    {
+        setWindowTitle("认证");
+        ui->name_edit->setPlaceholderText(tr("对方看到的我的名称"));
+        ui->label_edit->setPlaceholderText(tr("为好友添加标签"));
+        ui->alias_edit->setPlaceholderText(tr("给好友的备注"));
+        ui->apply_label->setText("确认好友申请：");
+    }
+}
+
+void FriendRequestDialog::setSearchInfo(std::shared_ptr<SearchInfo> si)
+{
+    _si = si;
+    auto apply_name = UserMgr::getInstancePtr()->getName();
+    auto bak_name = si->getName();
+    ui->name_edit->setText(apply_name);
+    ui->alias_edit->setText(bak_name);
+}
+
+void FriendRequestDialog::setApplyInfo(std::shared_ptr<ApplyInfo> apply_info)
+{
+    _apply_info = apply_info;
+    if (!apply_info)
+        return;
+
+    const QString my_name = UserMgr::getInstance().getName();
+    ui->name_edit->setText(my_name);
+
+    const QString peer_display =
+        apply_info->_nick.isEmpty() ? apply_info->_name : apply_info->_nick;
+    ui->alias_edit->setText(peer_display);
+    ui->alias_edit->setPlaceholderText(peer_display);
+}
+
+// ---------- 标签系统 ----------
+
+void FriendRequestDialog::initTipLbs()
 {
     int lines = 1;
     for (int i = 0; i < _tip_data.size(); i++)
     {
-
         auto *lb = new ClickedLabel(ui->label_list);
         lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                      "selected_pressed");
@@ -81,9 +122,9 @@ void ApplyFriend::initTipLbs()
             slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
         });
 
-        QFontMetrics fontMetrics(lb->font());                      // 获取QLabel控件的字体信息
-        int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
-        int textHeight = fontMetrics.height();                     // 获取文本的高度
+        QFontMetrics fontMetrics(lb->font());
+        int textWidth = fontMetrics.horizontalAdvance(lb->text());
+        int textHeight = fontMetrics.height();
 
         if (_tip_cur_point.x() + textWidth + TIP_OFFSET > ui->label_list->width())
         {
@@ -99,15 +140,13 @@ void ApplyFriend::initTipLbs()
         }
 
         auto next_point = _tip_cur_point;
-
         addTipLbs(lb, _tip_cur_point, next_point, textWidth, textHeight);
-
         _tip_cur_point = next_point;
     }
 }
 
-void ApplyFriend::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_point, int text_width,
-                            int text_height)
+void FriendRequestDialog::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_point,
+                                    int text_width, int text_height)
 {
     lb->move(cur_point);
     lb->show();
@@ -117,7 +156,7 @@ void ApplyFriend::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_poi
     next_point.setY(lb->pos().y());
 }
 
-bool ApplyFriend::eventFilter(QObject *obj, QEvent *event)
+bool FriendRequestDialog::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == ui->scrollArea && event->type() == QEvent::Enter)
     {
@@ -130,16 +169,7 @@ bool ApplyFriend::eventFilter(QObject *obj, QEvent *event)
     return QObject::eventFilter(obj, event);
 }
 
-void ApplyFriend::setSearchInfo(std::shared_ptr<SearchInfo> si)
-{
-    _si = si;
-    auto apply_name = UserMgr::getInstancePtr()->getName();
-    auto bak_name = si->getName();
-    ui->name_edit->setText(apply_name);
-    ui->alias_edit->setText(bak_name);
-}
-
-void ApplyFriend::slot_more_lb_clicked()
+void FriendRequestDialog::slot_more_lb_clicked()
 {
     qDebug() << "receive more label clicked";
     ui->more_label_widget->hide();
@@ -154,9 +184,9 @@ void ApplyFriend::slot_more_lb_clicked()
     {
         auto added_lb = _add_labels[added_key];
 
-        QFontMetrics fontMetrics(added_lb->font());                  // 获取QLabel控件的字体信息
-        textWidth = fontMetrics.horizontalAdvance(added_lb->text()); // 获取文本的宽度
-        textHeight = fontMetrics.height();                           // 获取文本的高度
+        QFontMetrics fontMetrics(added_lb->font());
+        textWidth = fontMetrics.horizontalAdvance(added_lb->text());
+        textHeight = fontMetrics.height();
 
         if (_tip_cur_point.x() + textWidth + TIP_OFFSET > ui->label_list->width())
         {
@@ -189,13 +219,12 @@ void ApplyFriend::slot_more_lb_clicked()
             slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
         });
 
-        QFontMetrics fontMetrics(lb->font());                      // 获取QLabel控件的字体信息
-        int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
-        int textHeight = fontMetrics.height();                     // 获取文本的高度
+        QFontMetrics fontMetrics(lb->font());
+        textWidth = fontMetrics.horizontalAdvance(lb->text());
+        textHeight = fontMetrics.height();
 
         if (_tip_cur_point.x() + textWidth + TIP_OFFSET > ui->label_list->width())
         {
-
             _tip_cur_point.setX(TIP_OFFSET);
             _tip_cur_point.setY(_tip_cur_point.y() + textHeight + 15);
         }
@@ -210,17 +239,15 @@ void ApplyFriend::slot_more_lb_clicked()
     int diff_height = next_point.y() + textHeight + TIP_OFFSET - ui->label_list->height();
     ui->label_list->setFixedHeight(next_point.y() + textHeight + TIP_OFFSET);
 
-    // qDebug()<<"after resize ui->label_list size is " <<  ui->label_list->size();
     ui->scroll_content->setFixedHeight(ui->scroll_content->height() + diff_height);
 }
 
-void ApplyFriend::resetLabels()
+void FriendRequestDialog::resetLabels()
 {
     auto max_width = ui->grid_widget->width();
     auto label_height = 0;
     for (auto iter = _friend_labels.begin(); iter != _friend_labels.end(); iter++)
     {
-        // todo... 添加宽度统计
         if (_label_point.x() + iter.value()->width() > max_width)
         {
             _label_point.setY(_label_point.y() + iter.value()->height() + 6);
@@ -251,7 +278,7 @@ void ApplyFriend::resetLabels()
     }
 }
 
-void ApplyFriend::addLabel(QString name)
+void FriendRequestDialog::addLabel(QString name)
 {
     if (_friend_labels.find(name) != _friend_labels.end())
     {
@@ -263,14 +290,10 @@ void ApplyFriend::addLabel(QString name)
     tmp_label->setObjectName("FriendLabel");
 
     auto max_width = ui->grid_widget->width();
-    // todo... 添加宽度统计
     if (_label_point.x() + tmp_label->width() > max_width)
     {
         _label_point.setY(_label_point.y() + tmp_label->height() + 6);
         _label_point.setX(2);
-    }
-    else
-    {
     }
 
     tmp_label->move(_label_point);
@@ -278,7 +301,7 @@ void ApplyFriend::addLabel(QString name)
     _friend_labels[tmp_label->text()] = tmp_label;
     _friend_label_keys.push_back(tmp_label->text());
 
-    connect(tmp_label, &FriendLabel::sig_close, this, &ApplyFriend::slot_remove_friend_label);
+    connect(tmp_label, &FriendLabel::sig_close, this, &FriendRequestDialog::slot_remove_friend_label);
 
     _label_point.setX(_label_point.x() + tmp_label->width() + 2);
 
@@ -299,7 +322,7 @@ void ApplyFriend::addLabel(QString name)
     }
 }
 
-void ApplyFriend::slot_lb_ed_return_pressed()
+void FriendRequestDialog::slot_lb_ed_return_pressed()
 {
     if (ui->label_edit->text().isEmpty())
     {
@@ -311,13 +334,11 @@ void ApplyFriend::slot_lb_ed_return_pressed()
 
     ui->input_tip_widget->hide();
     auto find_it = std::find(_tip_data.begin(), _tip_data.end(), text);
-    // 找到了就只需设置状态为选中即可
     if (find_it == _tip_data.end())
     {
         _tip_data.push_back(text);
     }
 
-    // 判断标签展示栏是否有该标签
     auto find_add = _add_labels.find(text);
     if (find_add != _add_labels.end())
     {
@@ -325,7 +346,6 @@ void ApplyFriend::slot_lb_ed_return_pressed()
         return;
     }
 
-    // 标签展示栏也增加一个标签, 并设置绿色选中
     auto *lb = new ClickedLabel(ui->label_list);
     lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                  "selected_pressed");
@@ -337,14 +357,13 @@ void ApplyFriend::slot_lb_ed_return_pressed()
     qDebug() << "ui->label_list->width() is " << ui->label_list->width();
     qDebug() << "_tip_cur_point.x() is " << _tip_cur_point.x();
 
-    QFontMetrics fontMetrics(lb->font());                      // 获取QLabel控件的字体信息
-    int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
-    int textHeight = fontMetrics.height();                     // 获取文本的高度
+    QFontMetrics fontMetrics(lb->font());
+    int textWidth = fontMetrics.horizontalAdvance(lb->text());
+    int textHeight = fontMetrics.height();
     qDebug() << "textWidth is " << textWidth;
 
     if (_tip_cur_point.x() + textWidth + TIP_OFFSET + 3 > ui->label_list->width())
     {
-
         _tip_cur_point.setX(5);
         _tip_cur_point.setY(_tip_cur_point.y() + textHeight + 15);
     }
@@ -362,7 +381,7 @@ void ApplyFriend::slot_lb_ed_return_pressed()
     ui->scroll_content->setFixedHeight(ui->scroll_content->height() + diff_height);
 }
 
-void ApplyFriend::slot_remove_friend_label(QString name)
+void FriendRequestDialog::slot_remove_friend_label(QString name)
 {
     qDebug() << "receive close signal";
 
@@ -406,8 +425,7 @@ void ApplyFriend::slot_remove_friend_label(QString name)
     find_add.value()->resetNormalState();
 }
 
-// 点击标已有签添加或删除新联系人的标签
-void ApplyFriend::slot_change_friend_label_by_tip(QString lbtext, ClickLabelState state)
+void FriendRequestDialog::slot_change_friend_label_by_tip(QString lbtext, ClickLabelState state)
 {
     auto find_iter = _add_labels.find(lbtext);
     if (find_iter == _add_labels.end())
@@ -417,20 +435,18 @@ void ApplyFriend::slot_change_friend_label_by_tip(QString lbtext, ClickLabelStat
 
     if (state == ClickLabelState::SELECTED)
     {
-        // 编写添加逻辑
         addLabel(lbtext);
         return;
     }
 
     if (state == ClickLabelState::NORMAL)
     {
-        // 编写删除逻辑
         slot_remove_friend_label(lbtext);
         return;
     }
 }
 
-void ApplyFriend::slot_lb_ed_text_changed(const QString &text)
+void FriendRequestDialog::slot_lb_ed_text_changed(const QString &text)
 {
     if (text.isEmpty())
     {
@@ -451,12 +467,12 @@ void ApplyFriend::slot_lb_ed_text_changed(const QString &text)
     ui->input_tip_widget->show();
 }
 
-void ApplyFriend::slot_lb_ed_editing_finished()
+void FriendRequestDialog::slot_lb_ed_editing_finished()
 {
     ui->input_tip_widget->hide();
 }
 
-void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
+void FriendRequestDialog::slot_add_friend_label_by_click_tip(QString text)
 {
     int index = text.indexOf(ADD_PREFIX);
     if (index != -1)
@@ -466,13 +482,11 @@ void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
     addLabel(text);
 
     auto find_it = std::find(_tip_data.begin(), _tip_data.end(), text);
-    // 找到了就只需设置状态为选中即可
     if (find_it == _tip_data.end())
     {
         _tip_data.push_back(text);
     }
 
-    // 判断标签展示栏是否有该标签
     auto find_add = _add_labels.find(text);
     if (find_add != _add_labels.end())
     {
@@ -480,7 +494,6 @@ void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
         return;
     }
 
-    // 标签展示栏也增加一个标签, 并设置绿色选中
     auto *lb = new ClickedLabel(ui->label_list);
     lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                  "selected_pressed");
@@ -492,14 +505,13 @@ void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
     qDebug() << "ui->label_list->width() is " << ui->label_list->width();
     qDebug() << "_tip_cur_point.x() is " << _tip_cur_point.x();
 
-    QFontMetrics fontMetrics(lb->font());                      // 获取QLabel控件的字体信息
-    int textWidth = fontMetrics.horizontalAdvance(lb->text()); // 获取文本的宽度
-    int textHeight = fontMetrics.height();                     // 获取文本的高度
+    QFontMetrics fontMetrics(lb->font());
+    int textWidth = fontMetrics.horizontalAdvance(lb->text());
+    int textHeight = fontMetrics.height();
     qDebug() << "textWidth is " << textWidth;
 
     if (_tip_cur_point.x() + textWidth + TIP_OFFSET + 3 > ui->label_list->width())
     {
-
         _tip_cur_point.setX(5);
         _tip_cur_point.setY(_tip_cur_point.y() + textHeight + 15);
     }
@@ -517,37 +529,66 @@ void ApplyFriend::slot_add_friend_label_by_click_tip(QString text)
     ui->scroll_content->setFixedHeight(ui->scroll_content->height() + diff_height);
 }
 
-void ApplyFriend::slot_cancel_btn_clicked()
+void FriendRequestDialog::slot_cancel_btn_clicked()
 {
-    qDebug() << "Slot Apply Cancel";
-    this->hide();
-    deleteLater();
+    qDebug() << "cancel";
+    reject();
 }
 
-void ApplyFriend::slot_sure_btn_clicked()
+void FriendRequestDialog::slot_sure_btn_clicked()
 {
-    qDebug() << "Slot Apply Sure called";
-    QJsonObject json_obj;
-    auto uid = UserMgr::getInstance().getUid();
-    json_obj["uid"] = uid;
-    auto name = ui->name_edit->text();
-    if (name.isEmpty())
+    if (_mode == Mode::Apply)
     {
-        name = ui->name_edit->placeholderText();
+        qDebug() << "Slot Apply Sure called";
+        QJsonObject json_obj;
+        auto uid = UserMgr::getInstance().getUid();
+        json_obj["uid"] = uid;
+        auto name = ui->name_edit->text();
+        if (name.isEmpty())
+        {
+            name = ui->name_edit->placeholderText();
+        }
+        json_obj["apply_name"] = name;
+        auto alias_name = ui->alias_edit->text();
+        if (alias_name.isEmpty())
+        {
+            alias_name = ui->alias_edit->placeholderText();
+        }
+        json_obj["alias_name"] = alias_name;
+        json_obj["touid"] = _si->getUid();
+        QJsonDocument doc(json_obj);
+        QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        emit TcpMgr::getInstance().sig_send_data(ReqId::ID_ADD_FRIEND_REQ, json_data);
     }
-    json_obj["apply_name"] = name;
-    auto alias_name = ui->alias_edit->text();
-    if (alias_name.isEmpty())
+    else
     {
-        alias_name = ui->alias_edit->placeholderText();
-    }
-    json_obj["alias_name"] = alias_name;
-    json_obj["touid"] = _si->getUid();
-    QJsonDocument doc(json_obj);
-    QByteArray json_data = doc.toJson(QJsonDocument::Compact);
-    // 发送tcp请求给chat server
-    emit TcpMgr::getInstance().sig_send_data(ReqId::ID_ADD_FRIEND_REQ, json_data);
+        qDebug() << "AuthenFriend: confirm auth (accept apply)";
+        if (!_apply_info)
+        {
+            qDebug() << "FriendRequestDialog: missing apply info";
+            return;
+        }
 
-    this->hide();
-    deleteLater();
+        QJsonObject json_obj;
+        const int self_uid = UserMgr::getInstance().getUid();
+        const int applicant_uid = _apply_info->_uid;
+
+        json_obj["fromuid"] = applicant_uid;
+        json_obj["touid"] = self_uid;
+        QString alias_name = "";
+        if (!ui->alias_edit->text().isEmpty())
+        {
+            alias_name = ui->alias_edit->text();
+        }
+        else
+        {
+            alias_name = ui->alias_edit->placeholderText();
+        }
+        json_obj["alias_name"] = alias_name;
+        QJsonDocument doc(json_obj);
+        QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        emit TcpMgr::getInstance().sig_send_data(ReqId::ID_AUTH_FRIEND_REQ, json_data);
+    }
+
+    accept();
 }

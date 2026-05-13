@@ -1,31 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ApplyFriend</class>
- <widget class="QDialog" name="ApplyFriend">
+ <class>FriendRequestDialog</class>
+ <widget class="QDialog" name="FriendRequestDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>360</width>
-    <height>620</height>
+    <width>400</width>
+    <height>650</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>360</width>
-    <height>620</height>
+    <width>400</width>
+    <height>650</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>360</width>
-    <height>620</height>
+    <width>400</width>
+    <height>650</height>
    </size>
   </property>
   <property name="windowTitle">
-   <string>ApplyFriend</string>
+   <string>FriendRequestDialog</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -38,6 +41,22 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>45</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
    <item>
     <widget class="QScrollArea" name="scrollArea">
      <property name="minimumSize">
@@ -54,11 +73,11 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>358</width>
+        <width>398</width>
         <height>498</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <property name="leftMargin">
         <number>0</number>
        </property>
@@ -86,7 +105,7 @@
           </size>
          </property>
          <property name="text">
-          <string>申请添加好友</string>
+          <string>发送添加好友申请：</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -95,30 +114,11 @@
        </item>
        <item>
         <widget class="QWidget" name="apply_widget" native="true">
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <widget class="Line" name="line">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>25</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>25</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>发送添加好友申请：</string>
             </property>
            </widget>
           </item>
@@ -139,7 +139,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="label">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -174,7 +174,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_3">
+           <widget class="QLabel" name="label_2">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -200,7 +200,7 @@
               <height>50</height>
              </size>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_4">
+            <layout class="QVBoxLayout" name="verticalLayout_9">
              <property name="spacing">
               <number>0</number>
              </property>
@@ -262,7 +262,7 @@
                  <height>35</height>
                 </size>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_5">
+               <layout class="QVBoxLayout" name="verticalLayout_10">
                 <property name="spacing">
                  <number>0</number>
                 </property>
@@ -292,7 +292,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="widget" native="true">
+           <widget class="QWidget" name="widget_2" native="true">
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -305,7 +305,7 @@
               <height>60</height>
              </size>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
              <property name="spacing">
               <number>7</number>
              </property>
@@ -351,9 +351,9 @@
                  <height>16777215</height>
                 </size>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_6">
+               <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
-                 <spacer name="verticalSpacer_4">
+                 <spacer name="verticalSpacer_5">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
                   </property>
@@ -385,7 +385,7 @@
                  </widget>
                 </item>
                 <item>
-                 <spacer name="verticalSpacer_3">
+                 <spacer name="verticalSpacer_6">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
                   </property>
@@ -411,22 +411,6 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>10</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
     <widget class="QWidget" name="apply_sure_widget" native="true">
      <property name="minimumSize">
       <size>
@@ -434,9 +418,9 @@
        <height>50</height>
       </size>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
       <item>
-       <spacer name="horizontalSpacer">
+       <spacer name="horizontalSpacer_4">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -462,7 +446,7 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer_3">
+       <spacer name="horizontalSpacer_5">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -488,7 +472,7 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer_2">
+       <spacer name="horizontalSpacer_6">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -496,7 +480,7 @@
          <size>
           <width>40</width>
           <height>20</height>
-         </size>
+        </size>
         </property>
        </spacer>
       </item>
@@ -504,14 +488,17 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
+    <spacer name="verticalSpacer_2">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>13</height>
       </size>
      </property>
     </spacer>

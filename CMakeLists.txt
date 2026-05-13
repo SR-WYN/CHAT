@@ -88,8 +88,7 @@ set(CPP_SOURCES
     StateWidget.cpp
     SearchList.cpp
     UserData.cpp
-    AddUserItem.cpp
-    ApplyFriend.cpp
+        AddUserItem.cpp
     ApplyFriendPage.cpp
     ClickedOnceLabel.cpp
     FriendLabel.cpp
@@ -98,9 +97,9 @@ set(CPP_SOURCES
     ContactUserList.cpp
     ApplyFriendItem.cpp
     ApplyFriendList.cpp
-    AuthenFriend.cpp
     FriendInfoPage.cpp
     StatusDialog.cpp
+    FriendRequestDialog.cpp
 )
 
 # --- 6. 构建目标 ---

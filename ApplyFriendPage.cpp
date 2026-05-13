@@ -1,6 +1,6 @@
 #include "ApplyFriendPage.h"
 #include "ApplyFriendItem.h"
-#include "AuthenFriend.h"
+#include "FriendRequestDialog.h"
 #include "TcpMgr.h"
 #include "UserData.h"
 #include "UserMgr.h"
@@ -31,9 +31,9 @@ void ApplyFriendPage::loadApplyList()
             // _unauth_items[uid] = apply_item;
         }
         // 收到审核好友信号
-        connect(apply_item, &ApplyFriendItem::sig_auth_friend,
+                connect(apply_item, &ApplyFriendItem::sig_auth_friend,
                 [this](std::shared_ptr<ApplyInfo> apply_info) {
-                    auto *authFriend = new AuthenFriend(this);
+                    auto *authFriend = new FriendRequestDialog(this, FriendRequestDialog::Mode::Auth);
                     authFriend->setModal(true);
                     authFriend->setApplyInfo(apply_info);
                     authFriend->show();
@@ -72,7 +72,7 @@ void ApplyFriendPage::addNewApply(std::shared_ptr<AddFriendApply> apply)
     ui->apply_friend_list->setItemWidget(lwItem, apply_item);
     connect(apply_item, &ApplyFriendItem::sig_auth_friend,
             [this](std::shared_ptr<ApplyInfo> apply_info) {
-                auto *authFriend = new AuthenFriend(this);
+                auto *authFriend = new FriendRequestDialog(this, FriendRequestDialog::Mode::Auth);
                 authFriend->setModal(true);
                 authFriend->setApplyInfo(apply_info);
                 authFriend->show();

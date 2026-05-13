@@ -1,6 +1,7 @@
 #include "SearchList.h"
 #include "AddUserItem.h"
 #include "CustomsizeEdit.h"
+#include "FriendRequestDialog.h"
 #include "ListItemBase.h"
 #include "TcpMgr.h"
 #include "UserData.h"
@@ -186,6 +187,11 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
         _find_dlg = new StatusDialog(this);
         _find_dlg->setMode(StatusDialog::StatusMode::Success);
         _find_dlg->setSearchInfo(si);
+        connect(_find_dlg, &StatusDialog::sig_add_friend, this, [this](std::shared_ptr<SearchInfo> si) {
+            auto *apply_dlg = new FriendRequestDialog(this, FriendRequestDialog::Mode::Apply);
+            apply_dlg->setSearchInfo(si);
+            apply_dlg->show();
+        });
     }
     _find_dlg->show();
 }
