@@ -1,4 +1,5 @@
 #include "ChatPage.h"
+#include "AnimatedStateWidget.h"
 #include "TcpMgr.h"
 #include "global.h"
 #include "ui_ChatPage.h"
@@ -18,9 +19,8 @@ ChatPage::ChatPage(QWidget *parent) : QWidget(parent), ui(new Ui::ChatPage)
 {
     ui->setupUi(this);
 
-    ui->receive_btn->setState("normal", "hover", "press");
-    ui->send_btn->setState("normal", "hover", "press");
-
+    ui->emoji_label->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
+    ui->file_label->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
     ui->emoji_label->setState("normal", "hover", "press", "normal", "hover", "press");
     ui->file_label->setState("normal", "hover", "press", "normal", "hover", "press");
 }

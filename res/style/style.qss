@@ -537,7 +537,9 @@ QListWidget::item:selected {
   border-radius: 20px;
 }
 
-#tip_close {
+#tip_close[state="normal"],
+#tip_close[state="hover"],
+#tip_close[state="press"] {
   border-image: url(:/res/tip_close.png);
 }
 
@@ -547,7 +549,7 @@ QListWidget::item:selected {
   border-radius: 10px;
 }
 
-/* ClickedBtn 按下时 property 为 "press"（见 ClickedBtn.cpp），勿写 pressed；与 #receive_btn 同色阶 */
+/* AnimatedStateWidget Momentary 模式：state 为 normal / hover / press（勿写 Qt 的 pressed 伪状态） */
 #msg_chat_button[state="normal"] {
     border: 1px solid transparent;
     background-color: transparent;

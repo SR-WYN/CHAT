@@ -279,7 +279,10 @@
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="ClickedOnceLabel" name="tip_label">
+                 <widget class="QLabel" name="tip_label">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
                   <property name="text">
                    <string>TextLabel</string>
                   </property>
@@ -366,7 +369,10 @@
                  </spacer>
                 </item>
                 <item>
-                 <widget class="ClickedOnceLabel" name="more_label">
+                 <widget class="QLabel" name="more_label">
+                  <property name="cursor">
+                   <cursorShape>PointingHandCursor</cursorShape>
+                  </property>
                   <property name="minimumSize">
                    <size>
                     <width>25</width>
@@ -433,7 +439,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="ClickedBtn" name="sure_btn">
+       <widget class="QPushButton" name="sure_btn">
         <property name="minimumSize">
          <size>
           <width>100</width>
@@ -459,7 +465,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="ClickedBtn" name="cancel_btn">
+       <widget class="QPushButton" name="cancel_btn">
         <property name="minimumSize">
          <size>
           <width>100</width>
@@ -507,19 +513,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ClickedBtn</class>
-   <extends>QPushButton</extends>
-   <header location="global">ClickedBtn.h</header>
-  </customwidget>
-  <customwidget>
    <class>CustomsizeEdit</class>
    <extends>QLineEdit</extends>
    <header location="global">CustomsizeEdit.h</header>
-  </customwidget>
-  <customwidget>
-   <class>ClickedOnceLabel</class>
-   <extends>QLabel</extends>
-   <header location="global">ClickedOnceLabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

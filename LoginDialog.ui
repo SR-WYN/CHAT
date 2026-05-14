@@ -191,7 +191,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="ClickedLabel" name="forget_label">
+        <widget class="AnimatedStateWidget" name="forget_label">
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -329,9 +329,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ClickedLabel</class>
-   <extends>QLabel</extends>
-   <header>ClickedLabel.h</header>
+   <class>AnimatedStateWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">AnimatedStateWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

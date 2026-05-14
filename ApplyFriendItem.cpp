@@ -1,6 +1,6 @@
 #include "ApplyFriendItem.h"
+#include "AnimatedStateWidget.h"
 #include "ui_ApplyFriendItem.h"
-#include "ClickedBtn.h"
 
 ApplyFriendItem::ApplyFriendItem(QWidget *parent) :
     ListItemBase(parent), _added(false),
@@ -8,10 +8,10 @@ ApplyFriendItem::ApplyFriendItem(QWidget *parent) :
 {
     ui->setupUi(this);
     setItemType(ListItemType::APPLY_FRIEND_ITEM);
+    ui->add_btn->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
     ui->add_btn->setState("normal", "hover", "press");
-    ui->add_btn->setText("");
     ui->add_btn->hide();
-    connect(ui->add_btn, &ClickedBtn::clicked,  [this](){
+    connect(ui->add_btn, &AnimatedStateWidget::clicked, [this]() {
         emit this->sig_auth_friend(_apply_info);
     });
 }

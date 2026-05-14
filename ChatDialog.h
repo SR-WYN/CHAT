@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <qlistwidget.h>
 #include "global.h"
-#include "StateWidget.h"
+#include "AnimatedStateWidget.h"
 #include "UserData.h"
 
 QT_BEGIN_NAMESPACE
@@ -23,8 +23,8 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 private:
     void showSearch(bool bsearch);
-    void addLabelGroup(StateWidget *label);
-    void clearLabelState(StateWidget *label);
+    void addLabelGroup(AnimatedStateWidget *label);
+    void clearLabelState(AnimatedStateWidget *active);
     void handleGlobalMousePress(QMouseEvent *mouse_event);
     void setSelectChatItem(int uid = 0);
     void setSelectChatPage(int uid = 0);
@@ -35,7 +35,7 @@ private:
     ChatUIMode _mode;
     ChatUIMode _state;
     bool _b_loading;
-    QList<StateWidget *> _label_list;
+    QList<AnimatedStateWidget *> _label_list;
     QMap<int,QListWidgetItem*> _chat_item_added;
     int _cur_chat_uid;
     QWidget *_last_widget;

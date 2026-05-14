@@ -1,4 +1,5 @@
 #include "FriendInfoPage.h"
+#include "AnimatedStateWidget.h"
 #include "ui_FriendInfoPage.h"
 #include <memory>
 #include <qpixmap.h>
@@ -10,9 +11,12 @@ FriendInfoPage::FriendInfoPage(QWidget *parent) :
     ui(new Ui::FriendInfoPage)
 {
     ui->setupUi(this);
-    ui->msg_chat_button->setState("normal","hover","press");
-    ui->video_chat_button->setState("normal","hover","press");
-    ui->voice_chat_button->setState("normal","hover","press");
+    ui->msg_chat_button->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
+    ui->video_chat_button->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
+    ui->voice_chat_button->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
+    ui->msg_chat_button->setState("normal", "hover", "press");
+    ui->video_chat_button->setState("normal", "hover", "press");
+    ui->voice_chat_button->setState("normal", "hover", "press");
 }
 
 FriendInfoPage::~FriendInfoPage()

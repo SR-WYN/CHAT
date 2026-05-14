@@ -134,7 +134,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedLabel" name="emoji_label">
+          <widget class="AnimatedStateWidget" name="emoji_label">
            <property name="minimumSize">
             <size>
              <width>25</width>
@@ -169,7 +169,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedLabel" name="file_label">
+          <widget class="AnimatedStateWidget" name="file_label">
            <property name="minimumSize">
             <size>
              <width>25</width>
@@ -248,7 +248,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedBtn" name="receive_btn">
+          <widget class="QPushButton" name="receive_btn">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -286,7 +286,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedBtn" name="send_btn">
+          <widget class="QPushButton" name="send_btn">
            <property name="minimumSize">
             <size>
              <width>150</width>
@@ -330,14 +330,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ClickedLabel</class>
-   <extends>QLabel</extends>
-   <header location="global">ClickedLabel.h</header>
-  </customwidget>
-  <customwidget>
-   <class>ClickedBtn</class>
-   <extends>QPushButton</extends>
-   <header location="global">ClickedBtn.h</header>
+   <class>AnimatedStateWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">AnimatedStateWidget.h</header>
+   <container>1</container>
   </customwidget>
   <customwidget>
    <class>ChatView</class>

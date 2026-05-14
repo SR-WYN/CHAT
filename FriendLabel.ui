@@ -79,7 +79,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="ClickedLabel" name="tip_close">
+       <widget class="AnimatedStateWidget" name="tip_close">
         <property name="minimumSize">
          <size>
           <width>15</width>
@@ -104,9 +104,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ClickedLabel</class>
-   <extends>QLabel</extends>
-   <header location="global">ClickedLabel.h</header>
+   <class>AnimatedStateWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">AnimatedStateWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

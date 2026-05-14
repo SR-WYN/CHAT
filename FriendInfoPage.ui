@@ -161,7 +161,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="ClickedBtn" name="msg_chat_button">
+       <widget class="AnimatedStateWidget" name="msg_chat_button">
         <property name="minimumSize">
          <size>
           <width>80</width>
@@ -193,7 +193,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="ClickedBtn" name="voice_chat_button">
+       <widget class="AnimatedStateWidget" name="voice_chat_button">
         <property name="minimumSize">
          <size>
           <width>80</width>
@@ -225,7 +225,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="ClickedBtn" name="video_chat_button">
+       <widget class="AnimatedStateWidget" name="video_chat_button">
         <property name="minimumSize">
          <size>
           <width>80</width>
@@ -263,9 +263,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ClickedBtn</class>
-   <extends>QPushButton</extends>
-   <header location="global">ClickedBtn.h</header>
+   <class>AnimatedStateWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">AnimatedStateWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

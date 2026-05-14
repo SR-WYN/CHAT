@@ -84,7 +84,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="StateWidget" name="side_head_label" native="true">
+          <widget class="AnimatedStateWidget" name="side_head_label" native="true">
            <property name="minimumSize">
             <size>
              <width>50</width>
@@ -100,7 +100,7 @@
           </widget>
          </item>
          <item>
-          <widget class="StateWidget" name="side_chat_label" native="true">
+          <widget class="AnimatedStateWidget" name="side_chat_label" native="true">
            <property name="minimumSize">
             <size>
              <width>50</width>
@@ -116,7 +116,7 @@
           </widget>
          </item>
          <item>
-          <widget class="StateWidget" name="side_contact_label" native="true">
+          <widget class="AnimatedStateWidget" name="side_contact_label" native="true">
            <property name="minimumSize">
             <size>
              <width>50</width>
@@ -227,7 +227,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="ClickedBtn" name="add_btn">
+          <widget class="AnimatedStateWidget" name="add_btn">
            <property name="minimumSize">
             <size>
              <width>24</width>
@@ -274,11 +274,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ClickedBtn</class>
-   <extends>QPushButton</extends>
-   <header location="global">ClickedBtn.h</header>
-  </customwidget>
-  <customwidget>
    <class>CustomsizeEdit</class>
    <extends>QLineEdit</extends>
    <header location="global">CustomsizeEdit.h</header>
@@ -295,9 +290,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>StateWidget</class>
+   <class>AnimatedStateWidget</class>
    <extends>QWidget</extends>
-   <header location="global">StateWidget.h</header>
+   <header location="global">AnimatedStateWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

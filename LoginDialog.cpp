@@ -1,5 +1,5 @@
 #include "LoginDialog.h"
-#include "ClickedLabel.h"
+#include "AnimatedStateWidget.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
 #include "TcpMgr.h"
@@ -20,7 +20,8 @@ LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), _ui(new Ui::LoginDi
     connect(_ui->reg_btn, &QPushButton::clicked, this, &LoginDialog::sig_login_switch_register);
 
     _ui->forget_label->setState("normal", "hover", "", "selected", "selected_hover", "");
-    connect(_ui->forget_label, &ClickedLabel::sig_label_clicked, this,
+    _ui->forget_label->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
+    connect(_ui->forget_label, &AnimatedStateWidget::clicked, this,
             &LoginDialog::slot_forget_label_clicked);
     connect(_ui->login_btn, &QPushButton::clicked, this, &LoginDialog::slot_login_btn_clicked);
     initHead();

@@ -213,7 +213,7 @@
             </widget>
            </item>
            <item>
-            <widget class="ClickedLabel" name="pass_visible">
+            <widget class="AnimatedStateWidget" name="pass_visible">
              <property name="minimumSize">
               <size>
                <width>20</width>
@@ -284,7 +284,7 @@
             </widget>
            </item>
            <item>
-            <widget class="ClickedLabel" name="confirm_visible">
+            <widget class="AnimatedStateWidget" name="confirm_visible">
              <property name="minimumSize">
               <size>
                <width>20</width>
@@ -548,9 +548,10 @@
    <header>TimerBtn.h</header>
   </customwidget>
   <customwidget>
-   <class>ClickedLabel</class>
-   <extends>QLabel</extends>
-   <header>ClickedLabel.h</header>
+   <class>AnimatedStateWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">AnimatedStateWidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

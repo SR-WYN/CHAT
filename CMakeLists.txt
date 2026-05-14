@@ -68,12 +68,10 @@ set(CPP_SOURCES
     HttpMgr.cpp
     ConfigMgr.cpp
     TimerBtn.cpp
-    ClickedLabel.cpp
     ResetDialog.cpp
     TcpMgr.cpp
     UserMgr.cpp
     ChatDialog.cpp
-    ClickedBtn.cpp
     CustomsizeEdit.cpp
     ChatUserList.cpp
     ChatUserWidget.cpp
@@ -85,12 +83,11 @@ set(CPP_SOURCES
     MessageTextEdit.cpp
     TextBubble.cpp
     PictureBubble.cpp
-    StateWidget.cpp
+    AnimatedStateWidget.cpp
     SearchList.cpp
     UserData.cpp
-        AddUserItem.cpp
+    AddUserItem.cpp
     ApplyFriendPage.cpp
-    ClickedOnceLabel.cpp
     FriendLabel.cpp
     ConUserItem.cpp
     GroupTipItem.cpp

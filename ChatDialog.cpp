@@ -33,6 +33,7 @@ ChatDialog::ChatDialog(QWidget *parent)
       _state(ChatUIMode::CHAT_MODE), _b_loading(false), _cur_chat_uid(0), _last_widget(nullptr)
 {
     ui->setupUi(this);
+    ui->add_btn->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
     ui->add_btn->setState("normal", "hover", "press");
     ui->search_edit->setMaxLength(15);
 
@@ -75,8 +76,9 @@ ChatDialog::ChatDialog(QWidget *parent)
     ui->side_chat_label->setSelected(true);
     ui->side_contact_label->setSelected(false);
 
-    connect(ui->side_chat_label, &StateWidget::clicked, this, &ChatDialog::slot_side_chat);
-    connect(ui->side_contact_label, &StateWidget::clicked, this, &ChatDialog::slot_side_contact);
+    connect(ui->side_chat_label, &AnimatedStateWidget::clicked, this, &ChatDialog::slot_side_chat);
+    connect(ui->side_contact_label, &AnimatedStateWidget::clicked, this,
+            &ChatDialog::slot_side_contact);
 
     connect(ui->con_user_list, &ContactUserList::sig_switch_apply_friend_page, this, [this]() {
         ui->stackedWidget->setCurrentWidget(ui->friend_apply_page);
@@ -198,7 +200,7 @@ void ChatDialog::slot_loading_chat_user()
     _b_loading = false;
 }
 
-void ChatDialog::addLabelGroup(StateWidget *label)
+void ChatDialog::addLabelGroup(AnimatedStateWidget *label)
 {
     _label_list.push_back(label);
 }
@@ -221,14 +223,11 @@ void ChatDialog::slot_side_contact()
     showSearch(false);
 }
 
-void ChatDialog::clearLabelState(StateWidget *label)
+void ChatDialog::clearLabelState(AnimatedStateWidget *active)
 {
-    for (auto &item : _label_list)
+    for (auto *item : _label_list)
     {
-        if (item != label)
-        {
-            item->clearState();
-        }
+        item->setSelected(item == active);
     }
 }
 
@@ -345,7 +344,7 @@ void ChatDialog::slot_jump_chat_item(std::shared_ptr<SearchInfo> si)
     }
     qDebug() << "jump chat item,uid is " << si->getUid();
     ui->chat_user_list->scrollToItem(find_iter.value());
-    ui->side_chat_label->setSelected(true);
+    clearLabelState(ui->side_chat_label);
     setSelectChatItem(si->getUid());
     setSelectChatPage(si->getUid());
 }
@@ -522,7 +521,7 @@ void ChatDialog::slot_jump_chat_item_from_infopage(std::shared_ptr<UserInfo> use
     {
         qDebug() << "jump to chat item , uid is " << user_info->_uid;
         ui->chat_user_list->scrollToItem(find_iter.value());
-        ui->side_chat_label->setSelected(true);
+        clearLabelState(ui->side_chat_label);
         setSelectChatItem(user_info->_uid);
         setSelectChatPage(user_info->_uid);
         slot_side_chat();
@@ -536,7 +535,7 @@ void ChatDialog::slot_jump_chat_item_from_infopage(std::shared_ptr<UserInfo> use
     ui->chat_user_list->setItemWidget(item, chat_user_widget);
     _chat_item_added.insert(user_info->_uid, item);
     ui->chat_user_list->scrollToItem(item);
-    ui->side_chat_label->setSelected(true);
+    clearLabelState(ui->side_chat_label);
     setSelectChatItem(user_info->_uid);
     setSelectChatPage(user_info->_uid);
     slot_side_chat();

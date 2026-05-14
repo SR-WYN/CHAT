@@ -1,5 +1,5 @@
 #include "RegisterDialog.h"
-#include "ClickedLabel.h"
+#include "AnimatedStateWidget.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
 #include "TimerBtn.h"
@@ -53,8 +53,10 @@ RegisterDialog::RegisterDialog(QWidget *parent)
     _ui->pass_visible->setState("unvisible", "unvisible_hover", "", "visible", "visible_hover", "");
     _ui->confirm_visible->setState("unvisible", "unvisible_hover", "", "visible", "visible_hover",
                                     "");
+    _ui->pass_visible->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
+    _ui->confirm_visible->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
 
-    connect(_ui->pass_visible, &ClickedLabel::sig_label_clicked, this, [this]() {
+    connect(_ui->pass_visible, &AnimatedStateWidget::clicked, this, [this]() {
         auto state = _ui->pass_visible->getCurState();
         if (state == ClickLabelState::NORMAL)
         {
@@ -67,7 +69,7 @@ RegisterDialog::RegisterDialog(QWidget *parent)
         qDebug() << "Label was clicked!";
     });
 
-    connect(_ui->confirm_visible, &ClickedLabel::sig_label_clicked, this, [this]() {
+    connect(_ui->confirm_visible, &AnimatedStateWidget::clicked, this, [this]() {
         auto state = _ui->confirm_visible->getCurState();
         if (state == ClickLabelState::NORMAL)
         {

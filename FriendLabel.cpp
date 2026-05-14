@@ -1,13 +1,13 @@
 #include "FriendLabel.h"
-#include "ClickedLabel.h"
+#include "AnimatedStateWidget.h"
 #include "ui_FriendLabel.h"
 
 FriendLabel::FriendLabel(QWidget *parent) : QFrame(parent), ui(new Ui::FriendLabel)
 {
     ui->setupUi(this);
-    ui->tip_close->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
-                            "selected_pressed");
-    connect(ui->tip_close, &ClickedLabel::sig_label_clicked, this, &FriendLabel::slot_close);
+    ui->tip_close->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
+    ui->tip_close->setState("normal", "hover", "press");
+    connect(ui->tip_close, &AnimatedStateWidget::clicked, this, &FriendLabel::slot_close);
 }
 
 FriendLabel::~FriendLabel()

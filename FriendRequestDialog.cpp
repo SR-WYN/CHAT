@@ -1,6 +1,5 @@
 #include "FriendRequestDialog.h"
-#include "ClickedLabel.h"
-#include "ClickedOnceLabel.h"
+#include "AnimatedStateWidget.h"
 #include "CustomsizeEdit.h"
 #include "FriendLabel.h"
 #include "TcpMgr.h"
@@ -11,6 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QMouseEvent>
 #include <QScrollBar>
 #include <algorithm>
 
@@ -36,7 +36,8 @@ FriendRequestDialog::FriendRequestDialog(QWidget *parent, Mode mode)
                  "Rust 程序设计", "父与子学Python", "nodejs开发指南", "go 语言开发指南",
                  "游戏伙伴",      "金融投资",       "微信读书",       "拼多多拼友"};
 
-    connect(ui->more_label, &ClickedOnceLabel::clicked, this, &FriendRequestDialog::slot_more_lb_clicked);
+    ui->tip_label->installEventFilter(this);
+    ui->more_label->installEventFilter(this);
     initTipLbs();
     connect(ui->label_edit, &QLineEdit::returnPressed, this,
             &FriendRequestDialog::slot_lb_ed_return_pressed);
@@ -44,14 +45,9 @@ FriendRequestDialog::FriendRequestDialog(QWidget *parent, Mode mode)
             &FriendRequestDialog::slot_lb_ed_text_changed);
     connect(ui->label_edit, &QLineEdit::editingFinished, this,
             &FriendRequestDialog::slot_lb_ed_editing_finished);
-    connect(ui->tip_label, &ClickedOnceLabel::clicked, this,
-            &FriendRequestDialog::slot_add_friend_label_by_click_tip);
-
     ui->scrollArea->horizontalScrollBar()->setHidden(true);
     ui->scrollArea->verticalScrollBar()->setHidden(true);
     ui->scrollArea->installEventFilter(this);
-    ui->sure_btn->setState("normal", "hover", "press");
-    ui->cancel_btn->setState("normal", "hover", "press");
     connect(ui->cancel_btn, &QPushButton::clicked, this, &FriendRequestDialog::slot_cancel_btn_clicked);
     connect(ui->sure_btn, &QPushButton::clicked, this, &FriendRequestDialog::slot_sure_btn_clicked);
 }
@@ -113,12 +109,13 @@ void FriendRequestDialog::initTipLbs()
     int lines = 1;
     for (int i = 0; i < _tip_data.size(); i++)
     {
-        auto *lb = new ClickedLabel(ui->label_list);
+        auto *lb = new AnimatedStateWidget(ui->label_list);
+        lb->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
         lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                      "selected_pressed");
         lb->setObjectName("tipslb");
         lb->setText(_tip_data[i]);
-        connect(lb, &ClickedLabel::sig_label_clicked, this, [this, lb]() {
+        connect(lb, &AnimatedStateWidget::clicked, this, [this, lb]() {
             slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
         });
 
@@ -145,7 +142,7 @@ void FriendRequestDialog::initTipLbs()
     }
 }
 
-void FriendRequestDialog::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_point,
+void FriendRequestDialog::addTipLbs(AnimatedStateWidget *lb, QPoint cur_point, QPoint &next_point,
                                     int text_width, int text_height)
 {
     lb->move(cur_point);
@@ -158,6 +155,23 @@ void FriendRequestDialog::addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &
 
 bool FriendRequestDialog::eventFilter(QObject *obj, QEvent *event)
 {
+    if (event->type() == QEvent::MouseButtonRelease)
+    {
+        auto *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton)
+        {
+            if (obj == ui->tip_label)
+            {
+                slot_add_friend_label_by_click_tip(ui->tip_label->text());
+                return true;
+            }
+            if (obj == ui->more_label)
+            {
+                slot_more_lb_clicked();
+                return true;
+            }
+        }
+    }
     if (obj == ui->scrollArea && event->type() == QEvent::Enter)
     {
         ui->scrollArea->verticalScrollBar()->setHidden(false);
@@ -210,12 +224,13 @@ void FriendRequestDialog::slot_more_lb_clicked()
             continue;
         }
 
-        auto *lb = new ClickedLabel(ui->label_list);
+        auto *lb = new AnimatedStateWidget(ui->label_list);
+        lb->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
         lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                      "selected_pressed");
         lb->setObjectName("tipslb");
         lb->setText(_tip_data[i]);
-        connect(lb, &ClickedLabel::sig_label_clicked, this, [this, lb]() {
+        connect(lb, &AnimatedStateWidget::clicked, this, [this, lb]() {
             slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
         });
 
@@ -346,12 +361,13 @@ void FriendRequestDialog::slot_lb_ed_return_pressed()
         return;
     }
 
-    auto *lb = new ClickedLabel(ui->label_list);
+    auto *lb = new AnimatedStateWidget(ui->label_list);
+    lb->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
     lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                  "selected_pressed");
     lb->setObjectName("tipslb");
     lb->setText(text);
-    connect(lb, &ClickedLabel::sig_label_clicked, this, [this, lb]() {
+    connect(lb, &AnimatedStateWidget::clicked, this, [this, lb]() {
         slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
     });
     qDebug() << "ui->label_list->width() is " << ui->label_list->width();
@@ -494,12 +510,13 @@ void FriendRequestDialog::slot_add_friend_label_by_click_tip(QString text)
         return;
     }
 
-    auto *lb = new ClickedLabel(ui->label_list);
+    auto *lb = new AnimatedStateWidget(ui->label_list);
+    lb->setQssInteraction(AnimatedStateWidget::QssInteraction::ToggleSelection);
     lb->setState("normal", "hover", "pressed", "selected_normal", "selected_hover",
                  "selected_pressed");
     lb->setObjectName("tipslb");
     lb->setText(text);
-    connect(lb, &ClickedLabel::sig_label_clicked, this, [this, lb]() {
+    connect(lb, &AnimatedStateWidget::clicked, this, [this, lb]() {
         slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
     });
     qDebug() << "ui->label_list->width() is " << ui->label_list->width();

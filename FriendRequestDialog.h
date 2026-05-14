@@ -15,7 +15,7 @@ QT_END_NAMESPACE
 
 class SearchInfo;
 class FriendLabel;
-class ClickedLabel;
+class AnimatedStateWidget;
 
 class FriendRequestDialog : public QDialog
 {
@@ -39,7 +39,7 @@ public:
 
     // 标签系统
     void initTipLbs();
-    void addTipLbs(ClickedLabel *lb, QPoint cur_point, QPoint &next_point, int text_width,
+    void addTipLbs(AnimatedStateWidget *lb, QPoint cur_point, QPoint &next_point, int text_width,
                    int text_height);
     bool eventFilter(QObject *obj, QEvent *event) override;
 
@@ -64,7 +64,7 @@ private:
     Mode _mode;
 
     // 已创建的候选标签
-    QMap<QString, ClickedLabel *> _add_labels;
+    QMap<QString, AnimatedStateWidget *> _add_labels;
     std::vector<QString> _add_label_keys;
     QPoint _label_point;
 
