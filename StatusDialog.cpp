@@ -1,6 +1,6 @@
 #include "StatusDialog.h"
+#include "UserModels.h"
 #include "ui_StatusDialog.h"
-#include "UserData.h"
 #include <QMovie>
 #include <QDebug>
 
@@ -36,10 +36,10 @@ void StatusDialog::setMode(StatusMode mode)
     }
 }
 
-void StatusDialog::setSearchInfo(std::shared_ptr<SearchInfo> si)
+void StatusDialog::setSearchInfo(std::shared_ptr<UserProfile> profile)
 {
-    _si = si;
-    ui->name_label->setText(si->getName());
+    _profile = std::move(profile);
+    ui->name_label->setText(_profile->loginName);
 }
 
 void StatusDialog::startLoading()
@@ -104,9 +104,9 @@ void StatusDialog::on_sure_btn_clicked()
 
 void StatusDialog::on_add_friend_btn_clicked()
 {
-    if (_si)
+    if (_profile)
     {
-        emit sig_add_friend(_si);
+        emit sig_add_friend(_profile);
     }
     this->hide();
 }

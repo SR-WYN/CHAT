@@ -1,4 +1,5 @@
 #include "ConUserItem.h"
+#include "UserModels.h"
 #include "ui_ConUserItem.h"
 
 ConUserItem::ConUserItem(QWidget *parent) : ListItemBase(parent), ui(new Ui::ConUserItem)
@@ -8,59 +9,47 @@ ConUserItem::ConUserItem(QWidget *parent) : ListItemBase(parent), ui(new Ui::Con
     ui->red_point->raise();
     showRedPoint(false);
 }
+
 ConUserItem::~ConUserItem()
 {
     delete ui;
 }
+
 QSize ConUserItem::sizeHint() const
 {
-    return QSize(250, 70); // 返回自定义的尺寸
+    return QSize(250, 70);
 }
-void ConUserItem::setInfo(std::shared_ptr<AuthInfo> auth_info)
+
+void ConUserItem::refreshUi()
 {
-    _info = std::make_shared<UserInfo>(auth_info);
-    QString icon = _info->_icon;
+    if (!_entry)
+    {
+        return;
+    }
+    QString icon = _entry->profile.icon;
     if (icon.isEmpty())
     {
         icon = QStringLiteral(":/res/head_1.png");
     }
     QPixmap pixmap(icon);
-    // 设置图片自动缩放
     ui->icon_label->setPixmap(
         pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_info->displayName());
+    ui->user_name_label->setText(_entry->listDisplayName());
 }
-void ConUserItem::setInfo(int uid, QString name, QString icon)
+
+void ConUserItem::setInfo(std::shared_ptr<AuthAcceptedPeer> peer)
 {
-    _info = std::make_shared<UserInfo>(uid, name, icon);
-    QString resolved = _info->_icon;
-    if (resolved.isEmpty())
-    {
-        resolved = QStringLiteral(":/res/head_1.png");
-    }
-    QPixmap pixmap(resolved);
-    // 设置图片自动缩放
-    ui->icon_label->setPixmap(
-        pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_info->displayName());
+    _entry = std::make_shared<FriendListEntry>(*peer);
+    refreshUi();
 }
-void ConUserItem::setInfo(std::shared_ptr<AuthRsp> auth_rsp)
+
+void ConUserItem::setInfo(UserProfile profile)
 {
-    _info = std::make_shared<UserInfo>(auth_rsp);
-    QString icon = _info->_icon;
-    if (icon.isEmpty())
-    {
-        icon = QStringLiteral(":/res/head_1.png");
-    }
-    QPixmap pixmap(icon);
-    // 设置图片自动缩放
-    ui->icon_label->setPixmap(
-        pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    ui->icon_label->setScaledContents(true);
-    ui->user_name_label->setText(_info->displayName());
+    _entry = std::make_shared<FriendListEntry>(std::move(profile));
+    refreshUi();
 }
+
 void ConUserItem::showRedPoint(bool show)
 {
     if (show)
@@ -73,7 +62,7 @@ void ConUserItem::showRedPoint(bool show)
     }
 }
 
-std::shared_ptr<UserInfo> ConUserItem::getUserInfo() const
+std::shared_ptr<FriendListEntry> ConUserItem::getFriendEntry() const
 {
-    return _info;
+    return _entry;
 }

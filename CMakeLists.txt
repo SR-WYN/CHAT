@@ -85,7 +85,7 @@ set(CPP_SOURCES
     PictureBubble.cpp
     AnimatedStateWidget.cpp
     SearchList.cpp
-    UserData.cpp
+    UserModels.cpp
     AddUserItem.cpp
     ApplyFriendPage.cpp
     FriendLabel.cpp

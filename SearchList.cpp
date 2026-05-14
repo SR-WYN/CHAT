@@ -4,12 +4,13 @@
 #include "FriendRequestDialog.h"
 #include "ListItemBase.h"
 #include "TcpMgr.h"
-#include "UserData.h"
+#include "UserMgr.h"
+#include "UserModels.h"
 #include "global.h"
+#include <QDebug>
 #include <QLineEdit>
 #include <memory>
 #include <qjsondocument.h>
-#include "UserMgr.h"
 
 SearchList::SearchList(QWidget *parent)
     : QListWidget(parent), _find_dlg(nullptr), _search_edit(nullptr), _loadingDialog(nullptr),
@@ -158,13 +159,13 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
     closeFindDlg();
 }
 
-void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
+void SearchList::slot_user_search(std::shared_ptr<UserProfile> profile)
 {
     waitPending(false);
     closeFindDlg();
-    if (si == nullptr)
+    if (profile == nullptr)
     {
-        qDebug() << "slot_user_search si is nullptr";
+        qDebug() << "slot_user_search profile is nullptr";
         _find_dlg = new StatusDialog(this);
         _find_dlg->setMode(StatusDialog::StatusMode::Fail);
         _find_dlg->show();
@@ -173,25 +174,26 @@ void SearchList::slot_user_search(std::shared_ptr<SearchInfo> si)
     else
     {
         auto self_uid = UserMgr::getInstance().getUid();
-        if (self_uid == si->getUid())
+        if (self_uid == profile->uid)
         {
             qDebug() << "don't search myself";
             return;
         }
-        bool b_exist = UserMgr::getInstance().checkFriendById(si->getUid());
+        bool b_exist = UserMgr::getInstance().checkFriendById(profile->uid);
         if (b_exist)
         {
-            emit sig_jump_chat_item(si);
+            emit sig_jump_chat_item(profile);
             return;
         }
         _find_dlg = new StatusDialog(this);
         _find_dlg->setMode(StatusDialog::StatusMode::Success);
-        _find_dlg->setSearchInfo(si);
-        connect(_find_dlg, &StatusDialog::sig_add_friend, this, [this](std::shared_ptr<SearchInfo> si) {
-            auto *apply_dlg = new FriendRequestDialog(this, FriendRequestDialog::Mode::Apply);
-            apply_dlg->setSearchInfo(si);
-            apply_dlg->show();
-        });
+        _find_dlg->setSearchInfo(profile);
+        connect(_find_dlg, &StatusDialog::sig_add_friend, this,
+                [this](std::shared_ptr<UserProfile> p) {
+                    auto *apply_dlg = new FriendRequestDialog(this, FriendRequestDialog::Mode::Apply);
+                    apply_dlg->setSearchInfo(p);
+                    apply_dlg->show();
+                });
     }
     _find_dlg->show();
 }

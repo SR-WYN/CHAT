@@ -3,11 +3,18 @@
 
 #include "ListItemBase.h"
 #include <QWidget>
-#include "UserData.h"
+#include <memory>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class ConUserItem; }
+namespace Ui
+{
+class ConUserItem;
+}
 QT_END_NAMESPACE
+
+struct AuthAcceptedPeer;
+struct FriendListEntry;
+struct UserProfile;
 
 class ConUserItem : public ListItemBase
 {
@@ -16,14 +23,16 @@ public:
     explicit ConUserItem(QWidget *parent = nullptr);
     ~ConUserItem();
     QSize sizeHint() const override;
-    void setInfo(std::shared_ptr<AuthInfo> auth_info);
-    void setInfo(std::shared_ptr<AuthRsp> auth_rsp);
-    void setInfo(int uid, QString name, QString icon);
+    void setInfo(std::shared_ptr<AuthAcceptedPeer> peer);
+    void setInfo(UserProfile profile);
     void showRedPoint(bool show = false);
-    std::shared_ptr<UserInfo> getUserInfo() const;
+    std::shared_ptr<FriendListEntry> getFriendEntry() const;
+
 private:
+    void refreshUi();
+
     Ui::ConUserItem *ui;
-    std::shared_ptr<UserInfo> _info;
+    std::shared_ptr<FriendListEntry> _entry;
 };
 
 #endif // CONUSERITEM_H

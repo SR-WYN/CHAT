@@ -5,11 +5,14 @@
 #include <memory>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class ApplyFriendPage; }
+namespace Ui
+{
+class ApplyFriendPage;
+}
 QT_END_NAMESPACE
 
-class AddFriendApply;
-struct AuthRsp;
+struct FriendApplyNotify;
+struct AuthAcceptedPeer;
 
 class ApplyFriendPage : public QWidget
 {
@@ -18,13 +21,14 @@ class ApplyFriendPage : public QWidget
 public:
     explicit ApplyFriendPage(QWidget *parent = nullptr);
     ~ApplyFriendPage() override;
-    void addNewApply(std::shared_ptr<AddFriendApply> apply);
+    void addNewApply(std::shared_ptr<FriendApplyNotify> notify);
     void loadApplyList();
 
 private:
     Ui::ApplyFriendPage *ui;
+
 private slots:
-    void slot_auth_rsp(std::shared_ptr<AuthRsp> auth_rsp);
+    void slot_auth_rsp(std::shared_ptr<AuthAcceptedPeer> peer);
 };
 
 #endif // APPLYFRIENDPAGE_H

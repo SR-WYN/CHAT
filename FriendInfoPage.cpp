@@ -1,14 +1,12 @@
 #include "FriendInfoPage.h"
 #include "AnimatedStateWidget.h"
+#include "UserModels.h"
 #include "ui_FriendInfoPage.h"
-#include <memory>
-#include <qpixmap.h>
+#include <QPixmap>
 #include <QStringLiteral>
-#include "UserData.h"
+#include <memory>
 
-FriendInfoPage::FriendInfoPage(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::FriendInfoPage)
+FriendInfoPage::FriendInfoPage(QWidget *parent) : QWidget(parent), ui(new Ui::FriendInfoPage)
 {
     ui->setupUi(this);
     ui->msg_chat_button->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
@@ -24,24 +22,24 @@ FriendInfoPage::~FriendInfoPage()
     delete ui;
 }
 
-void FriendInfoPage::setInfo(std::shared_ptr<UserInfo> user_info)
+void FriendInfoPage::setInfo(std::shared_ptr<FriendListEntry> entry)
 {
-    _user_info = user_info;
-    QString icon = _user_info->_icon;
+    _entry = std::move(entry);
+    QString icon = _entry->profile.icon;
     if (icon.isEmpty())
     {
         icon = QStringLiteral(":/res/head_1.png");
     }
     QPixmap pixmap(icon);
-    ui->icon_label->setPixmap(pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->icon_label->setPixmap(
+        pixmap.scaled(ui->icon_label->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->icon_label->setScaledContents(true);
 
-    ui->name_tip->setText(user_info->_name);
-    ui->alias_tip->setText(user_info->_alias);
+    ui->name_tip->setText(_entry->profile.loginName);
+    ui->alias_tip->setText(_entry->myAliasForPeer);
 }
 
 void FriendInfoPage::on_msg_chat_button_clicked()
 {
-    qDebug() << "on_msg_chat_button_clicked";
-    emit sig_jump_chat_item(_user_info);
+    emit sig_jump_chat_item(_entry);
 }

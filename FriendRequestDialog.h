@@ -1,7 +1,6 @@
 #ifndef FRIENDREQUESTDIALOG_H
 #define FRIENDREQUESTDIALOG_H
 
-#include "UserData.h"
 #include "global.h"
 #include <QDialog>
 #include <memory>
@@ -13,7 +12,8 @@ class FriendRequestDialog;
 }
 QT_END_NAMESPACE
 
-class SearchInfo;
+struct UserProfile;
+struct PendingFriendApplyRow;
 class FriendLabel;
 class AnimatedStateWidget;
 
@@ -24,20 +24,16 @@ class FriendRequestDialog : public QDialog
 public:
     enum class Mode
     {
-        Apply, // 主动申请添加好友（原 ApplyFriend）
-        Auth   // 认证/通过好友申请（原 AuthenFriend）
+        Apply,
+        Auth
     };
 
     explicit FriendRequestDialog(QWidget *parent = nullptr, Mode mode = Mode::Apply);
     ~FriendRequestDialog();
 
-    // Apply 模式：设置搜索到的用户
-    void setSearchInfo(std::shared_ptr<SearchInfo> si);
+    void setSearchInfo(std::shared_ptr<UserProfile> profile);
+    void setApplyInfo(std::shared_ptr<PendingFriendApplyRow> info);
 
-    // Auth 模式：设置申请信息
-    void setApplyInfo(std::shared_ptr<ApplyInfo> info);
-
-    // 标签系统
     void initTipLbs();
     void addTipLbs(AnimatedStateWidget *lb, QPoint cur_point, QPoint &next_point, int text_width,
                    int text_height);
@@ -63,20 +59,18 @@ private:
 
     Mode _mode;
 
-    // 已创建的候选标签
     QMap<QString, AnimatedStateWidget *> _add_labels;
     std::vector<QString> _add_label_keys;
     QPoint _label_point;
 
-    // 输入框显示的已选标签
     QMap<QString, FriendLabel *> _friend_labels;
     std::vector<QString> _friend_label_keys;
 
     std::vector<QString> _tip_data;
     QPoint _tip_cur_point;
 
-    std::shared_ptr<SearchInfo> _si;
-    std::shared_ptr<ApplyInfo> _apply_info;
+    std::shared_ptr<UserProfile> _profile;
+    std::shared_ptr<PendingFriendApplyRow> _apply_row;
 };
 
 #endif // FRIENDREQUESTDIALOG_H

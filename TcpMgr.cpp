@@ -1,5 +1,6 @@
 #include "TcpMgr.h"
 #include "UserData.h"
+#include "UserModels.h"
 #include "UserMgr.h"
 #include "global.h"
 #include <QJsonDocument>
@@ -103,7 +104,7 @@ void TcpMgr::initHandlers()
 
         QJsonObject json_obj = jsondoc.object();
 
-        if (!json_obj.contains("error"))
+        if (!json_obj.contains(QStringLiteral("error")))
         {
             int err = ErrorCodes::ERR_JSON;
             qDebug() << "Login Failed, err is " << err;
@@ -111,37 +112,33 @@ void TcpMgr::initHandlers()
             return;
         }
 
-        int err = json_obj["error"].toInt();
+        int err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
             qDebug() << "Login Failed, err is " << err;
             emit sig_login_failed(err);
             return;
         }
-        auto uid = json_obj["uid"].toInt();
-        auto name = json_obj["name"].toString();
-        QString nick =
-            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
-        if (nick.isEmpty())
+        auto self = std::make_shared<SelfProfile>(UserProfile::fromUserJson(json_obj));
+        UserMgr::getInstance().setSelfProfile(self);
+        if (json_obj.contains(QStringLiteral("token")))
         {
-            nick = name;
+            const QString tok = json_obj[QStringLiteral("token")].toString();
+            if (!tok.isEmpty())
+            {
+                UserMgr::getInstance().setToken(tok);
+            }
         }
-        auto icon = json_obj["icon"].toString();
-        auto sex = json_obj["sex"].toInt();
 
-        auto user_info = std::make_shared<UserInfo>(uid, name, nick, icon, sex);
-        UserMgr::getInstance().setUserInfo(user_info);
-        UserMgr::getInstance().setToken(json_obj["token"].toString());
-
-        if (json_obj.contains("apply_list"))
+        if (json_obj.contains(QStringLiteral("apply_list")))
         {
-            UserMgr::getInstance().appendApplyList(json_obj["apply_list"].toArray());
+            UserMgr::getInstance().appendApplyList(json_obj[QStringLiteral("apply_list")].toArray());
         }
 
         // 获取好友列表
-        if (json_obj.contains("friend_list"))
+        if (json_obj.contains(QStringLiteral("friend_list")))
         {
-            UserMgr::getInstance().appendFriendList(json_obj["friend_list"].toArray());
+            UserMgr::getInstance().appendFriendList(json_obj[QStringLiteral("friend_list")].toArray());
         }
 
         emit sig_switch_chatdlg();
@@ -168,7 +165,7 @@ void TcpMgr::initHandlers()
             return;
         }
 
-        auto err = json_obj["error"].toInt();
+        auto err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
             qDebug() << "search failed, err is " << err;
@@ -176,19 +173,8 @@ void TcpMgr::initHandlers()
             return;
         }
 
-        const QString icon =
-            json_obj.contains(QStringLiteral("icon")) ? json_obj["icon"].toString() : QString();
-        QString snick =
-            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
-        const QString sname = json_obj["name"].toString();
-        if (snick.isEmpty())
-        {
-            snick = sname;
-        }
-        auto si = std::make_shared<SearchInfo>(json_obj["uid"].toInt(), sname, snick,
-                                               json_obj["desc"].toString(), json_obj["sex"].toInt(),
-                                               icon);
-        emit sig_user_search(si);
+        auto profile = std::make_shared<UserProfile>(UserProfile::fromUserJson(json_obj));
+        emit sig_user_search(profile);
     });
 
     // 添加好友响应
@@ -248,25 +234,7 @@ void TcpMgr::initHandlers()
             return;
         }
 
-        int from_uid = json_obj.contains(QStringLiteral("applyuid"))
-                           ? json_obj[QStringLiteral("applyuid")].toInt()
-                           : json_obj[QStringLiteral("apply_uid")].toInt();
-        QString from_name = json_obj["name"].toString();
-        QString from_desc = json_obj["desc"].toString();
-        QString from_icon = json_obj["icon"].toString();
-        int from_sex = json_obj["sex"].toInt();
-        QString from_nick =
-            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
-        if (from_nick.isEmpty())
-        {
-            from_nick = from_name;
-        }
-        const QString from_alias = json_obj.contains(QStringLiteral("alias_name"))
-                                       ? json_obj["alias_name"].toString()
-                                       : QString();
-        auto apply_info = std::make_shared<AddFriendApply>(
-            from_uid, from_name, from_desc, from_icon, from_nick, from_sex, from_alias);
-        emit sig_friend_apply(apply_info);
+        emit sig_friend_apply(FriendApplyNotify::fromNotifyJson(json_obj));
 
         qDebug() << "notify add friend success";
     });
@@ -287,28 +255,14 @@ void TcpMgr::initHandlers()
             qDebug() << "auth friend rsp missing error field";
             return;
         }
-        auto err = json_obj["error"].toInt();
+        auto err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
             qDebug() << "auth friend failed, err is " << err;
             return;
         }
-        auto name = json_obj["name"].toString();
-        QString nick =
-            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
-        if (nick.isEmpty())
-        {
-            nick = name;
-        }
-        const QString alias = json_obj.contains(QStringLiteral("alias_name"))
-                                  ? json_obj["alias_name"].toString()
-                                  : QString();
-        auto icon = json_obj["icon"].toString();
-        auto sex = json_obj["sex"].toInt();
-        auto uid = json_obj["uid"].toInt();
-        auto rsp = std::make_shared<AuthRsp>(uid, name, nick, icon, sex, alias);
+        emit sig_auth_rsp(AuthAcceptedPeer::fromAuthJson(json_obj));
         qDebug() << "auth friend success";
-        emit sig_auth_rsp(rsp);
     });
 
     // 通知认证好友响应
@@ -327,30 +281,16 @@ void TcpMgr::initHandlers()
             qDebug() << "notify auth friend rsp missing error field";
             return;
         }
-        auto err = json_obj["error"].toInt();
+        auto err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
             qDebug() << "notify auth friend failed, err is " << err;
             return;
         }
 
-        int from_uid = json_obj["fromuid"].toInt();
-        QString name = json_obj["name"].toString();
-        QString nick =
-            json_obj.contains(QStringLiteral("nick")) ? json_obj["nick"].toString() : QString();
-        if (nick.isEmpty())
-        {
-            nick = name;
-        }
-        const QString alias = json_obj.contains(QStringLiteral("alias_name"))
-                                  ? json_obj["alias_name"].toString()
-                                  : QString();
-        QString icon = json_obj["icon"].toString();
-        int sex = json_obj["sex"].toInt();
-        auto auth_info = std::make_shared<AuthInfo>(from_uid, name, nick, icon, sex, alias);
+        emit sig_add_auth_friend(AuthAcceptedPeer::fromAuthJson(json_obj));
 
         qDebug() << "notify auth friend success";
-        emit sig_add_auth_friend(auth_info);
     });
 
     // 通知文本聊天

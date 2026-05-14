@@ -4,6 +4,7 @@
 #include "FriendLabel.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
+#include "UserModels.h"
 #include "ui_FriendRequestDialog.h"
 #include <QDebug>
 #include <QFontMetrics>
@@ -78,26 +79,27 @@ void FriendRequestDialog::setupUIForMode()
     }
 }
 
-void FriendRequestDialog::setSearchInfo(std::shared_ptr<SearchInfo> si)
+void FriendRequestDialog::setSearchInfo(std::shared_ptr<UserProfile> profile)
 {
-    _si = si;
+    _profile = std::move(profile);
     auto apply_name = UserMgr::getInstancePtr()->getName();
-    auto bak_name = si->getName();
+    auto bak_name = _profile->loginName;
     ui->name_edit->setText(apply_name);
     ui->alias_edit->setText(bak_name);
 }
 
-void FriendRequestDialog::setApplyInfo(std::shared_ptr<ApplyInfo> apply_info)
+void FriendRequestDialog::setApplyInfo(std::shared_ptr<PendingFriendApplyRow> apply_row)
 {
-    _apply_info = apply_info;
-    if (!apply_info)
+    _apply_row = std::move(apply_row);
+    if (!_apply_row)
+    {
         return;
+    }
 
     const QString my_name = UserMgr::getInstance().getName();
     ui->name_edit->setText(my_name);
 
-    const QString peer_display =
-        apply_info->_nick.isEmpty() ? apply_info->_name : apply_info->_nick;
+    const QString peer_display = _apply_row->profile.displayNickOrLogin();
     ui->alias_edit->setText(peer_display);
     ui->alias_edit->setPlaceholderText(peer_display);
 }
@@ -557,6 +559,11 @@ void FriendRequestDialog::slot_sure_btn_clicked()
     if (_mode == Mode::Apply)
     {
         qDebug() << "Slot Apply Sure called";
+        if (!_profile)
+        {
+            qDebug() << "FriendRequestDialog: missing search profile";
+            return;
+        }
         QJsonObject json_obj;
         auto uid = UserMgr::getInstance().getUid();
         json_obj["uid"] = uid;
@@ -572,7 +579,7 @@ void FriendRequestDialog::slot_sure_btn_clicked()
             alias_name = ui->alias_edit->placeholderText();
         }
         json_obj["alias_name"] = alias_name;
-        json_obj["touid"] = _si->getUid();
+        json_obj["touid"] = _profile->uid;
         QJsonDocument doc(json_obj);
         QByteArray json_data = doc.toJson(QJsonDocument::Compact);
         emit TcpMgr::getInstance().sig_send_data(ReqId::ID_ADD_FRIEND_REQ, json_data);
@@ -580,7 +587,7 @@ void FriendRequestDialog::slot_sure_btn_clicked()
     else
     {
         qDebug() << "AuthenFriend: confirm auth (accept apply)";
-        if (!_apply_info)
+        if (!_apply_row)
         {
             qDebug() << "FriendRequestDialog: missing apply info";
             return;
@@ -588,7 +595,7 @@ void FriendRequestDialog::slot_sure_btn_clicked()
 
         QJsonObject json_obj;
         const int self_uid = UserMgr::getInstance().getUid();
-        const int applicant_uid = _apply_info->_uid;
+        const int applicant_uid = _apply_row->profile.uid;
 
         json_obj["fromuid"] = applicant_uid;
         json_obj["touid"] = self_uid;
