@@ -69,15 +69,10 @@ void ChatPage::on_send_btn_clicked()
             continue;
         }
         QString type = msgList[i].msgFlag;
-        ChatItemBase *pChatItem = new ChatItemBase(role);
-        pChatItem->setUserName(userName);
-        pChatItem->setUserIcon(QPixmap(userIcon));
-        QWidget *pBubble = nullptr;
         if (type == "text")
         {
             QUuid uuid = QUuid::createUuid();
             QString uuid_string = uuid.toString();
-            pBubble = new TextBubble(role, msgList[i].content);
             if (text_size + msgList[i].content.length() > 1024)
             {
                 text_obj["fromuid"] = self_info->uid;
@@ -99,8 +94,14 @@ void ChatPage::on_send_btn_clicked()
             auto text_msg = std::make_shared<TextChatData>(uuid_string, obj["content"].toString(), self_info->uid,
                                                           peer_info->uid());
             emit sig_append_send_chat_msg(text_msg);
+            continue;
         }
-        else if (type == "image")
+
+        ChatItemBase *pChatItem = new ChatItemBase(role);
+        pChatItem->setUserName(userName);
+        pChatItem->setUserIcon(QPixmap(userIcon));
+        QWidget *pBubble = nullptr;
+        if (type == "image")
         {
             pBubble = new PictureBubble(QPixmap(msgList[i].content), role);
         }
