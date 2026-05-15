@@ -69,6 +69,7 @@ set(CPP_SOURCES
     ConfigMgr.cpp
     TimerBtn.cpp
     ResetDialog.cpp
+    HeartBeatMgr.cpp
     TcpMgr.cpp
     UserMgr.cpp
     ChatDialog.cpp

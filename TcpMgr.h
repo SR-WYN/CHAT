@@ -1,6 +1,8 @@
 #pragma once
 #include "SearchList.h"
 #include "Singleton.h"
+#include <functional>
+#include <QByteArray>
 #include <QObject>
 #include <QTcpSocket>
 #include <qobject.h>
@@ -34,6 +36,11 @@ private:
 public slots:
     void slot_tcp_connect(ServerInfo);
     bool slot_send_data(ReqId reqId, QString data);
+
+public:
+    void registerHandler(
+        ReqId id,
+        std::function<void(ReqId id, int len, QByteArray data)> handler);
 
 signals:
     void sig_con_success(bool bsuccess);

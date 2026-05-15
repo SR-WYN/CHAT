@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
             &MainWindow::slot_login_dlg_switch_reset);
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_switch_chatdlg, this,
             &MainWindow::slot_chat_dlg_switch_chat);
+
+    // TODO: 心跳超时后提示/回登录：connect HeartBeatMgr::getInstancePtr(), sig_heartbeat_timeout, ...
             
 //     emit TcpMgr::getInstancePtr()->sig_switch_chatdlg();//临时测试用
 }

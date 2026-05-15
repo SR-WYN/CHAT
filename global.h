@@ -41,7 +41,16 @@ enum ReqId
     ID_TEXT_CHAT_MSG_REQ = 2011, // 文本聊天消息请求
     ID_TEXT_CHAT_MSG_RSP = 2012, // 文本聊天消息响应
     ID_NOTIFY_TEXT_CHAT_MSG_REQ = 2013, // 通知文本聊天消息请求
+    ID_HEARTBEAT_PING = 3001, // 心跳ping
+    ID_HEARTBEAT_PONG = 3002, // 心跳pong
 };
+
+// 心跳：V1 只用间隔发 Ping；其余供后续未回 Pong 断开、带 ts 负载等 TODO
+constexpr int HEARTBEAT_PING_INTERVAL_MS = 30'000;
+constexpr int HEARTBEAT_MAX_MISSED_PONG = 3;
+constexpr int HEARTBEAT_PONG_DEADLINE_MS = HEARTBEAT_PING_INTERVAL_MS * HEARTBEAT_MAX_MISSED_PONG;
+inline constexpr char HEARTBEAT_KEY_TS[] = "ts";
+inline const QString HEARTBEAT_EMPTY_BODY = QStringLiteral("{}");
 
 enum Modules
 {

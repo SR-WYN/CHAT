@@ -1,4 +1,5 @@
 #include "TcpMgr.h"
+#include "HeartBeatMgr.h"
 #include "UserData.h"
 #include "UserModels.h"
 #include "UserMgr.h"
@@ -6,6 +7,7 @@
 #include <QJsonDocument>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <qabstractsocket.h>
 #include <qdebug.h>
 #include <qglobal.h>
@@ -74,10 +76,13 @@ TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), 
     // 处理连接断开
     QObject::connect(&_socket, &QTcpSocket::disconnected, [&]() {
         qDebug() << "Disconnected from server ";
+        HeartBeatMgr::getInstance().stop();
     });
     QObject::connect(this, &TcpMgr::sig_send_data, this, &TcpMgr::slot_send_data);
     // 注册消息
     initHandlers();
+    HeartBeatMgr::getInstance().attachToTcpMgr(this);
+    HeartBeatMgr::getInstance().registerHandlers(this);
 }
 
 TcpMgr::~TcpMgr()
@@ -142,6 +147,7 @@ void TcpMgr::initHandlers()
         }
 
         emit sig_switch_chatdlg();
+        HeartBeatMgr::getInstance().onTcpLoginOk();
     });
 
     // 搜索用户响应
@@ -365,8 +371,14 @@ void TcpMgr::handleMsg(ReqId id, int len, QByteArray data)
     find_iter.value()(id, len, data);
 }
 
+void TcpMgr::registerHandler(ReqId id, std::function<void(ReqId id, int len, QByteArray data)> handler)
+{
+    _handlers.insert(id, std::move(handler));
+}
+
 void TcpMgr::slot_tcp_connect(ServerInfo si)
 {
+    HeartBeatMgr::getInstance().stop();
     qDebug() << "receive tcp connect signal";
     // 尝试连接到服务器
     qDebug() << "Connecting to server...";
