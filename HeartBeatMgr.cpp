@@ -30,13 +30,20 @@ void HeartBeatMgr::registerHandlers(TcpMgr *tcp_mgr)
         Q_UNUSED(id);
         Q_UNUSED(len);
         Q_UNUSED(data);
-        qDebug() << "heartbeat pong received";
-        // TODO: 收到 Pong 清零未响应计数
+        HeartBeatMgr::getInstance().notePongReceived();
     });
+}
+
+void HeartBeatMgr::notePongReceived()
+{
+    _missed_pong_count = 0;
+    _awaiting_pong = false;
 }
 
 void HeartBeatMgr::onTcpLoginOk()
 {
+    _missed_pong_count = 0;
+    _awaiting_pong = false;
     start();
 }
 
@@ -44,6 +51,8 @@ void HeartBeatMgr::stop()
 {
     _ping_timer.stop();
     _running = false;
+    _awaiting_pong = false;
+    _missed_pong_count = 0;
 }
 
 void HeartBeatMgr::start()
@@ -58,19 +67,32 @@ void HeartBeatMgr::start()
 
 void HeartBeatMgr::slot_ping_timer_timeout()
 {
-    TcpMgr &tcp = TcpMgr::getInstance();
     bumpMissedPongIfNeeded();
     disconnectIfMissedTooMany();
+    if (!_running)
+    {
+        return;
+    }
 
+    TcpMgr &tcp = TcpMgr::getInstance();
     tcp.slot_send_data(ID_HEARTBEAT_PING, HEARTBEAT_EMPTY_BODY);
+    _awaiting_pong = true;
 }
 
 void HeartBeatMgr::bumpMissedPongIfNeeded()
 {
-    // TODO: 在未收到上一轮 Pong 时递增计数，用于断开判定
+    if (_awaiting_pong)
+    {
+        ++_missed_pong_count;
+    }
 }
 
 void HeartBeatMgr::disconnectIfMissedTooMany()
 {
-    // TODO: 超过 HEARTBEAT_MAX_MISSED_PONG 时断开并上报 UI（见 MainWindow TODO）
+    if (_missed_pong_count < HEARTBEAT_MAX_MISSED_PONG)
+    {
+        return;
+    }
+    stop();
+    emit sig_heartbeat_timeout();
 }

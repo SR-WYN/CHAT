@@ -28,6 +28,7 @@ public slots:
     void slot_login_dlg_switch_reset();
     void slot_reset_dlg_switch_login();
     void slot_chat_dlg_switch_chat();
+    void slot_heartbeat_timeout_back_to_login();
 
 private:
     Ui::MainWindow *_ui;

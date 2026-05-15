@@ -42,6 +42,7 @@ public:
     void updateContactLoadedCount();
     bool isLoadContactFinish();
     void appendFriendChatMsg(int uid, const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
+    void clearSession();
 
 private:
     UserMgr();

@@ -1,14 +1,17 @@
 #include "MainWindow.h"
 #include "ChatDialog.h"
+#include "HeartBeatMgr.h"
 #include "LoginDialog.h"
 #include "RegisterDialog.h"
 #include "ResetDialog.h"
 #include "TcpMgr.h"
+#include "UserMgr.h"
 #include "ui_MainWindow.h"
+#include <QMessageBox>
 #include <qnamespace.h>
 #include <qwidget.h>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainWindow), _chat_dlg(nullptr)
 {
     _ui->setupUi(this);
     this->setWindowIcon(QIcon(":/res/icon.ico"));
@@ -25,10 +28,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
             &MainWindow::slot_login_dlg_switch_reset);
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_switch_chatdlg, this,
             &MainWindow::slot_chat_dlg_switch_chat);
-
-    // TODO: 心跳超时后提示/回登录：connect HeartBeatMgr::getInstancePtr(), sig_heartbeat_timeout, ...
-            
-//     emit TcpMgr::getInstancePtr()->sig_switch_chatdlg();//临时测试用
+    connect(&HeartBeatMgr::getInstance(), &HeartBeatMgr::sig_heartbeat_timeout, this,
+            &MainWindow::slot_heartbeat_timeout_back_to_login, Qt::QueuedConnection);
 }
 
 MainWindow::~MainWindow()
@@ -98,4 +99,27 @@ void MainWindow::slot_chat_dlg_switch_chat()
     this->setMinimumSize(1200, 800);
     this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
     this->resize(1200, 800);
+}
+
+void MainWindow::slot_heartbeat_timeout_back_to_login()
+{
+    QMessageBox::warning(this, tr("连接已断开"), tr("与服务器的心跳超时，请重新登录。"));
+    UserMgr::getInstance().clearSession();
+    if (_chat_dlg != nullptr)
+    {
+        _chat_dlg->hide();
+        _chat_dlg->deleteLater();
+        _chat_dlg = nullptr;
+    }
+    _login_dlg = new LoginDialog(this);
+    _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    setCentralWidget(_login_dlg);
+    _login_dlg->show();
+    connect(_login_dlg, &LoginDialog::sig_login_switch_register, this,
+            &MainWindow::slot_login_dlg_switch_register);
+    connect(_login_dlg, &LoginDialog::sig_login_switch_reset, this,
+            &MainWindow::slot_login_dlg_switch_reset);
+    this->setMinimumSize(0, 0);
+    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    this->resize(800, 600);
 }

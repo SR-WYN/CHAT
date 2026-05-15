@@ -83,6 +83,8 @@ TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), 
     initHandlers();
     HeartBeatMgr::getInstance().attachToTcpMgr(this);
     HeartBeatMgr::getInstance().registerHandlers(this);
+    QObject::connect(&HeartBeatMgr::getInstance(), &HeartBeatMgr::sig_heartbeat_timeout, this,
+                     &TcpMgr::slot_heartbeat_abort);
 }
 
 TcpMgr::~TcpMgr()
@@ -385,6 +387,14 @@ void TcpMgr::slot_tcp_connect(ServerInfo si)
     _host = si.host;
     _port = static_cast<uint16_t>(si.port.toInt());
     _socket.connectToHost(_host, _port);
+}
+
+void TcpMgr::slot_heartbeat_abort()
+{
+    if (_socket.state() != QAbstractSocket::UnconnectedState)
+    {
+        _socket.abort();
+    }
 }
 
 bool TcpMgr::slot_send_data(ReqId reqId, QString data)

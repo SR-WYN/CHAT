@@ -229,3 +229,14 @@ void UserMgr::appendFriendChatMsg(int friend_id, const std::vector<std::shared_p
     }
     find_iter.value()->appendChatMsgs(msg_vec);
 }
+
+void UserMgr::clearSession()
+{
+    _token.clear();
+    _apply_list.clear();
+    _self_profile.reset();
+    _friend_map.clear();
+    _friend_list.clear();
+    _chat_loaded = 0;
+    _contact_loaded = 0;
+}

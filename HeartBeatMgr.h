@@ -7,7 +7,7 @@
 
 class TcpMgr;
 
-// TCP 会话层心跳：TCP 登录成功后定时 Ping，服务端 Pong（超时断开等后续 TODO）
+// TCP 会话层心跳：登录成功后定时 Ping，连续未收到 Pong 则断开
 class HeartBeatMgr : public QObject, public Singleton<HeartBeatMgr>
 {
     Q_OBJECT
@@ -20,6 +20,10 @@ public:
     void registerHandlers(TcpMgr *tcp_mgr);
     void onTcpLoginOk();
     void stop();
+    void notePongReceived();
+
+signals:
+    void sig_heartbeat_timeout();
 
 private:
     HeartBeatMgr();
@@ -27,6 +31,8 @@ private:
 
     QTimer _ping_timer;
     bool _running{false};
+    bool _awaiting_pong{false};
+    int _missed_pong_count{0};
 
     void bumpMissedPongIfNeeded();
     void disconnectIfMissedTooMany();

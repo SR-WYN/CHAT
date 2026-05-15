@@ -36,6 +36,7 @@ private:
 public slots:
     void slot_tcp_connect(ServerInfo);
     bool slot_send_data(ReqId reqId, QString data);
+    void slot_heartbeat_abort();
 
 public:
     void registerHandler(
