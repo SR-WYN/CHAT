@@ -74,6 +74,7 @@ struct FriendListEntry
     explicit FriendListEntry(const AuthAcceptedPeer &peer);
     explicit FriendListEntry(UserProfile p);
     void appendChatMsgs(const std::vector<std::shared_ptr<TextChatData>> &text_vec);
+    void setChatMsgs(const std::vector<std::shared_ptr<TextChatData>> &text_vec);
     QString listDisplayName() const;
     int uid() const { return profile.uid; }
 };

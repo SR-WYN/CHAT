@@ -230,6 +230,45 @@ void UserMgr::appendFriendChatMsg(int friend_id, const std::vector<std::shared_p
     find_iter.value()->appendChatMsgs(msg_vec);
 }
 
+void UserMgr::setFriendChatHistory(int friend_id,
+                                   const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
+{
+    auto find_iter = _friend_map.find(friend_id);
+    if (find_iter == _friend_map.end())
+    {
+        qDebug() << "setFriendChatHistory: not found friend uid " << friend_id;
+        return;
+    }
+    find_iter.value()->setChatMsgs(msg_vec);
+}
+
+void UserMgr::mergeFriendChatHistory(int friend_id,
+                                     const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
+{
+    if (msg_vec.empty())
+    {
+        return;
+    }
+    auto find_iter = _friend_map.find(friend_id);
+    if (find_iter == _friend_map.end())
+    {
+        qDebug() << "mergeFriendChatHistory: not found friend uid " << friend_id;
+        return;
+    }
+    find_iter.value()->appendChatMsgs(msg_vec);
+}
+
+std::vector<int> UserMgr::getAllFriendUids() const
+{
+    std::vector<int> uids;
+    uids.reserve(_friend_list.size());
+    for (const auto &entry : _friend_list)
+    {
+        uids.push_back(entry->uid());
+    }
+    return uids;
+}
+
 void UserMgr::clearSession()
 {
     _token.clear();

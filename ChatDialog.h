@@ -42,6 +42,8 @@ private:
     void loadMoreChatUser();
     void loadMoreContactUser();
     void updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
+    void refreshChatListFromMemory();
+    void refreshChatListItem(int peer_uid);
     Ui::ChatDialog *ui;
     ChatUIMode _mode;
     ChatUIMode _state;
@@ -66,6 +68,8 @@ private slots:
     void slot_item_clicked(QListWidgetItem *item);
     void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg);
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
+    void slot_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
+    void requestChatHistory(int peer_uid);
 };
 
 #endif // CHATDIALOG_H

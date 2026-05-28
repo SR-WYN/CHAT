@@ -42,6 +42,11 @@ public:
     void updateContactLoadedCount();
     bool isLoadContactFinish();
     void appendFriendChatMsg(int uid, const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
+    void setFriendChatHistory(int friend_id,
+                              const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
+    void mergeFriendChatHistory(int friend_id,
+                                const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
+    std::vector<int> getAllFriendUids() const;
     void clearSession();
 
 private:

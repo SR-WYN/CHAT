@@ -110,6 +110,8 @@ ChatDialog::ChatDialog(QWidget *parent)
             &ChatDialog::slot_append_send_chat_msg);
 
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_text_chat_msg, this, &ChatDialog::slot_text_chat_msg);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_chat_history, this, &ChatDialog::slot_chat_history);
+    refreshChatListFromMemory();
 }
 
 ChatDialog::~ChatDialog()
@@ -386,7 +388,12 @@ void ChatDialog::setSelectChatPage(int uid)
         {
             return;
         }
-        ui->chat_page->setFriendEntry(con_item->getFriendEntry());
+        auto entry = con_item->getFriendEntry();
+        ui->chat_page->setFriendEntry(entry);
+        if (entry)
+        {
+            requestChatHistory(entry->uid());
+        }
         return;
     }
     auto find_iter = _chat_item_added.find(uid);
@@ -413,8 +420,66 @@ void ChatDialog::setSelectChatPage(int uid)
         {
             return;
         }
-        ui->chat_page->setFriendEntry(con_item->getFriendEntry());
+        auto entry = con_item->getFriendEntry();
+        ui->chat_page->setFriendEntry(entry);
+        if (entry)
+        {
+            requestChatHistory(entry->uid());
+        }
         return;
+    }
+}
+
+void ChatDialog::requestChatHistory(int peer_uid)
+{
+    if (peer_uid <= 0)
+    {
+        return;
+    }
+    TcpMgr::getInstance().requestChatHistory(peer_uid, 0, 100);
+}
+
+void ChatDialog::slot_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs)
+{
+    UserMgr::getInstance().mergeFriendChatHistory(peer_uid, msgs);
+    refreshChatListItem(peer_uid);
+    if (_cur_chat_uid != peer_uid)
+    {
+        return;
+    }
+    const auto entry = UserMgr::getInstance().getFriendById(peer_uid);
+    if (!entry)
+    {
+        return;
+    }
+    ui->chat_page->setFriendEntry(entry);
+}
+
+void ChatDialog::refreshChatListFromMemory()
+{
+    for (auto it = _chat_item_added.begin(); it != _chat_item_added.end(); ++it)
+    {
+        refreshChatListItem(it.key());
+    }
+}
+
+void ChatDialog::refreshChatListItem(int peer_uid)
+{
+    const auto find_iter = _chat_item_added.find(peer_uid);
+    if (find_iter == _chat_item_added.end())
+    {
+        return;
+    }
+    const auto entry = UserMgr::getInstance().getFriendById(peer_uid);
+    if (!entry)
+    {
+        return;
+    }
+    QWidget *widget = ui->chat_user_list->itemWidget(find_iter.value());
+    auto *chat_widget = qobject_cast<ChatUserWidget *>(widget);
+    if (chat_widget)
+    {
+        chat_widget->setInfo(entry);
     }
 }
 
@@ -605,9 +670,8 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr)
         {
             return;
         }
-        chat_widget->updateLastMsg(msg_ptr->_chat_msgs);
+        refreshChatListItem(msg_ptr->_from_uid);
         updateChatMsg(msg_ptr->_chat_msgs);
-        UserMgr::getInstance().appendFriendChatMsg(msg_ptr->_from_uid, msg_ptr->_chat_msgs);
         return;
     }
 
@@ -621,8 +685,7 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr)
     chat_user_widget->setInfo(friend_info);
     QListWidgetItem *item = new QListWidgetItem;
     item->setSizeHint(chat_user_widget->sizeHint());
-    chat_user_widget->updateLastMsg(msg_ptr->_chat_msgs);
-    UserMgr::getInstance().appendFriendChatMsg(msg_ptr->_from_uid, msg_ptr->_chat_msgs);
+    refreshChatListItem(msg_ptr->_from_uid);
     ui->chat_user_list->insertItem(0, item);
     ui->chat_user_list->setItemWidget(item, chat_user_widget);
     _chat_item_added.insert(msg_ptr->_from_uid, item);
@@ -630,11 +693,14 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr)
 
 void ChatDialog::updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
 {
+    const int self_uid = UserMgr::getInstance().getUid();
     for (auto &msg : msg_vec)
     {
-        if (msg->_from_uid != _cur_chat_uid)
+        const int peer_uid =
+            (msg->_from_uid == self_uid) ? msg->_to_uid : msg->_from_uid;
+        if (peer_uid != _cur_chat_uid)
         {
-            break;
+            continue;
         }
         ui->chat_page->appendChatMsg(msg);
     }

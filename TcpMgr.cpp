@@ -16,6 +16,7 @@
 #include <qjsonobject.h>
 #include <qobject.h>
 #include <qtcpsocket.h>
+#include <QTimer>
 
 TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
 {
@@ -150,6 +151,7 @@ void TcpMgr::initHandlers()
 
         emit sig_switch_chatdlg();
         HeartBeatMgr::getInstance().onTcpLoginOk();
+        QTimer::singleShot(300, this, [this]() { requestAllFriendsChatHistory(); });
     });
 
     // 搜索用户响应
@@ -357,8 +359,71 @@ void TcpMgr::initHandlers()
         auto msg_ptr =
             std::make_shared<TextChatMsg>(json_obj["fromuid"].toInt(), json_obj["touid"].toInt(),
                                           json_obj["text_array"].toArray());
+        UserMgr::getInstance().appendFriendChatMsg(msg_ptr->_from_uid, msg_ptr->_chat_msgs);
         emit sig_text_chat_msg(msg_ptr);
     });
+
+    _handlers.insert(ID_CHAT_HISTORY_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            qDebug() << "chat history rsp json parse failed";
+            return;
+        }
+        const QJsonObject json_obj = json_doc.object();
+        if (!json_obj.contains(QStringLiteral("error")))
+        {
+            return;
+        }
+        if (json_obj[QStringLiteral("error")].toInt() != ErrorCodes::SUCCESS)
+        {
+            qDebug() << "chat history rsp error" << json_obj[QStringLiteral("error")].toInt();
+            return;
+        }
+        if (!json_obj.contains(QStringLiteral("peer_uid")) ||
+            !json_obj.contains(QStringLiteral("text_array")))
+        {
+            qDebug() << "chat history rsp missing peer_uid or text_array";
+            return;
+        }
+        const int peer_uid = json_obj[QStringLiteral("peer_uid")].toInt();
+        const QJsonArray text_array = json_obj[QStringLiteral("text_array")].toArray();
+        qDebug() << "chat history rsp peer_uid" << peer_uid << "count" << text_array.size();
+        std::vector<std::shared_ptr<TextChatData>> msgs;
+        msgs.reserve(static_cast<size_t>(text_array.size()));
+        for (const auto &item : text_array)
+        {
+            const QJsonObject obj = item.toObject();
+            const QString msgid = obj[QStringLiteral("msgid")].toString();
+            const QString content = obj[QStringLiteral("content")].toString();
+            const int fromuid = obj[QStringLiteral("fromuid")].toInt();
+            const int touid = obj[QStringLiteral("touid")].toInt();
+            msgs.push_back(std::make_shared<TextChatData>(msgid, content, fromuid, touid));
+        }
+        UserMgr::getInstance().mergeFriendChatHistory(peer_uid, msgs);
+        emit sig_chat_history(peer_uid, msgs);
+    });
+}
+
+void TcpMgr::requestChatHistory(int peer_uid, qint64 before_id, int limit)
+{
+    QJsonObject obj;
+    obj[QStringLiteral("uid")] = UserMgr::getInstance().getUid();
+    obj[QStringLiteral("peer_uid")] = peer_uid;
+    obj[QStringLiteral("before_id")] = before_id;
+    obj[QStringLiteral("limit")] = limit;
+    const QByteArray json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    slot_send_data(ID_CHAT_HISTORY_REQ, QString::fromUtf8(json_data));
+}
+
+void TcpMgr::requestAllFriendsChatHistory()
+{
+    for (const int peer_uid : UserMgr::getInstance().getAllFriendUids())
+    {
+        requestChatHistory(peer_uid, 0, 100);
+    }
 }
 
 void TcpMgr::handleMsg(ReqId id, int len, QByteArray data)

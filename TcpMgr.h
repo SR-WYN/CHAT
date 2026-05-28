@@ -8,6 +8,7 @@
 #include <qobject.h>
 
 class TextChatMsg;
+struct TextChatData;
 struct UserProfile;
 struct FriendApplyNotify;
 struct AuthAcceptedPeer;
@@ -42,6 +43,8 @@ public:
     void registerHandler(
         ReqId id,
         std::function<void(ReqId id, int len, QByteArray data)> handler);
+    void requestChatHistory(int peer_uid, qint64 before_id = 0, int limit = 100);
+    void requestAllFriendsChatHistory();
 
 signals:
     void sig_con_success(bool bsuccess);
@@ -54,4 +57,5 @@ signals:
     void sig_auth_rsp(std::shared_ptr<AuthAcceptedPeer> peer);
     void sig_add_auth_friend(std::shared_ptr<AuthAcceptedPeer> peer);
     void sig_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
+    void sig_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
 };

@@ -115,7 +115,32 @@ void FriendListEntry::appendChatMsgs(const std::vector<std::shared_ptr<TextChatD
 {
     for (const auto &msg : text_vec)
     {
-        chat_msgs.push_back(msg);
+        bool exists = false;
+        for (const auto &existing : chat_msgs)
+        {
+            if (existing->_msg_id == msg->_msg_id)
+            {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists)
+        {
+            chat_msgs.push_back(msg);
+        }
+    }
+    if (!text_vec.empty())
+    {
+        lastMessage = text_vec.back()->_msg_content;
+    }
+}
+
+void FriendListEntry::setChatMsgs(const std::vector<std::shared_ptr<TextChatData>> &text_vec)
+{
+    chat_msgs = text_vec;
+    if (!text_vec.empty())
+    {
+        lastMessage = text_vec.back()->_msg_content;
     }
 }
 

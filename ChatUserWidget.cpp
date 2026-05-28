@@ -44,12 +44,10 @@ std::shared_ptr<FriendListEntry> ChatUserWidget::getFriendEntry() const
 
 void ChatUserWidget::updateLastMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
 {
-    QString last_msg;
-    for (const auto &msg : msg_vec)
+    if (msg_vec.empty())
     {
-        last_msg = msg->_msg_content;
-        _entry->chat_msgs.push_back(msg);
+        return;
     }
-    _entry->lastMessage = last_msg;
-    ui->user_chat_label->setText(last_msg);
+    _entry->lastMessage = msg_vec.back()->_msg_content;
+    ui->user_chat_label->setText(_entry->lastMessage);
 }

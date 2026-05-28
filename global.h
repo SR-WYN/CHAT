@@ -41,6 +41,8 @@ enum ReqId
     ID_TEXT_CHAT_MSG_REQ = 2011, // 文本聊天消息请求
     ID_TEXT_CHAT_MSG_RSP = 2012, // 文本聊天消息响应
     ID_NOTIFY_TEXT_CHAT_MSG_REQ = 2013, // 通知文本聊天消息请求
+    ID_CHAT_HISTORY_REQ = 2014,         // 聊天历史请求
+    ID_CHAT_HISTORY_RSP = 2015,         // 聊天历史响应
     ID_HEARTBEAT_PING = 3001, // 心跳ping
     ID_HEARTBEAT_PONG = 3002, // 心跳pong
 };
