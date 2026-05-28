@@ -1,5 +1,6 @@
 #pragma once
-#include "Singleton.h" // 包含你的模板头文件
+#include "Log.h"
+#include "Singleton.h"
 #include <QJsonObject>
 #include <QString>
 
@@ -9,11 +10,15 @@ class ConfigMgr : public Singleton<ConfigMgr>
 
 public:
     QString getUrlPrefix() const;
+    LogConfig getLogConfig() const;
+
 private:
     ConfigMgr();
     ~ConfigMgr() override;
     void loadConfig();
-    void loadGateServer(const QJsonObject& root);
-    
+    void loadGateServer(const QJsonObject &root);
+    void loadLog(const QJsonObject &root);
+
     QString _url_prefix;
+    LogConfig _log_config;
 };

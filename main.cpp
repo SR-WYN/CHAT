@@ -1,3 +1,5 @@
+#include "ConfigMgr.h"
+#include "Log.h"
 #include "MainWindow.h"
 #include <QApplication>
 #include <QFile>
@@ -9,6 +11,12 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    ConfigMgr::getInstance();
+    if (!Log::init("CHAT", ConfigMgr::getInstance().getLogConfig()))
+    {
+        return 1;
+    }
+    Log::info(LogModule::App, "CHAT client starting");
     QFile qss(":/res/style/style.qss");
     if (qss.open(QFile::ReadOnly))
     {
@@ -22,5 +30,8 @@ int main(int argc, char *argv[])
     
     MainWindow w;
     w.show();
-    return QCoreApplication::exec();
+    const int code = QCoreApplication::exec();
+    Log::info(LogModule::App, "CHAT client exiting with code {}", code);
+    Log::shutdown();
+    return code;
 }

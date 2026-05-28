@@ -61,6 +61,7 @@ add_custom_command(
 # --- 5. 源文件清单 ---
 # 建议：如果文件很多，手动列出虽然麻烦，但能加快 CMake 预处理速度
 set(CPP_SOURCES
+    common/Log.cpp
     main.cpp
     MainWindow.cpp
     LoginDialog.cpp
@@ -115,6 +116,8 @@ add_custom_command(TARGET CHAT POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/${MY_CONFIG_FILE}"
         "$<TARGET_FILE_DIR:CHAT>/${MY_CONFIG_FILE}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        "$<TARGET_FILE_DIR:CHAT>/src/logdir"
 )
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MY_STATIC_DIR}")
@@ -128,7 +131,7 @@ endif()
 # --- 8. 包含路径与链接 ---
 # 使用 SYSTEM 关键字标记生成代码目录，编译器会减少对这些巨型文件的警告处理，稍微提升速度
 target_include_directories(CHAT SYSTEM PRIVATE ${PROTO_GEN_DIR})
-target_include_directories(CHAT PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(CHAT PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 target_link_libraries(CHAT
     PRIVATE

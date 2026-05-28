@@ -1,3 +1,4 @@
+#include "Log.h"
 #include "TcpMgr.h"
 #include "HeartBeatMgr.h"
 #include "UserData.h"
@@ -21,7 +22,7 @@
 TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
 {
     QObject::connect(&_socket, &QTcpSocket::connected, [&]() {
-        // 连接建立后发送消息
+        Log::info(LogModule::Tcp, "connected to {}:{}", _host.toStdString(), _port);
         emit sig_con_success(true);
     });
 
