@@ -108,12 +108,10 @@ bool ContactUserList::eventFilter(QObject *watched, QEvent *event)
             {
                 return true;
             }
-            qDebug() << "load more contact user";
             _load_pending = true;
             QTimer::singleShot(100, [this]() {
                 _load_pending = false;
             });
-            qDebug() << "emit loading contact user signal";
             emit sig_loading_contact_user();
         }
         return true;
@@ -126,30 +124,25 @@ void ContactUserList::slot_item_clicked(QListWidgetItem *item)
     QWidget *widget = this->itemWidget(item);
     if (!widget)
     {
-        qDebug() << "slot item clicked widget is nullptr";
         return;
     }
     ConUserItem *customItem = qobject_cast<ConUserItem *>(widget);
     if (!customItem)
     {
-        qDebug() << "slot item clicked widget is nullptr";
         return;
     }
     auto itemType = customItem->getItemType();
     if (itemType == ListItemType::INVALID_ITEM || itemType == ListItemType::GROUP_TIP_ITEM)
     {
-        qDebug() << "slot invalid item clicked ";
         return;
     }
     if (itemType == ListItemType::APPLY_FRIEND_ITEM)
     {
-        qDebug() << "apply friend item clicked ";
         emit sig_switch_apply_friend_page();
         return;
     }
     if (itemType == ListItemType::CONTACT_USER_ITEM)
     {
-        qDebug() << "contact user item clicked ";
         emit sig_switch_friend_info_page(customItem->getFriendEntry());
         return;
     }
@@ -157,14 +150,12 @@ void ContactUserList::slot_item_clicked(QListWidgetItem *item)
 
 void ContactUserList::slot_add_auth_firend(std::shared_ptr<AuthAcceptedPeer> peer)
 {
-    qDebug() << "add auth friend signal received";
     if (!peer)
     {
         return;
     }
     if (UserMgr::getInstance().checkFriendById(peer->profile.uid))
     {
-        qDebug() << peer->profile.loginName << " already is friend";
         return;
     }
     auto *con_user_widget = new ConUserItem;
@@ -178,14 +169,12 @@ void ContactUserList::slot_add_auth_firend(std::shared_ptr<AuthAcceptedPeer> pee
 
 void ContactUserList::slot_auth_rsp(std::shared_ptr<AuthAcceptedPeer> peer)
 {
-    qDebug() << "auth rsp signal received";
     if (!peer)
     {
         return;
     }
     if (UserMgr::getInstance().checkFriendById(peer->profile.uid))
     {
-        qDebug() << peer->profile.loginName << " already is friend";
         return;
     }
     auto *con_user_widget = new ConUserItem;

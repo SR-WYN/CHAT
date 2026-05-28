@@ -23,7 +23,6 @@ void HttpMgr::postHttpReq(QUrl url, QJsonObject json, ReqId req_id, Modules mod)
         // 处理错误情况
         if (reply->error() != QNetworkReply::NoError)
         {
-            qDebug() << reply->errorString();
             // 发送信号通知完成
             emit this->sig_http_finish(req_id, "", ErrorCodes::ERR_NETWORK, mod);
             reply->deleteLater();

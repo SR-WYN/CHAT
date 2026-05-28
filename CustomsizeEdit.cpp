@@ -17,7 +17,6 @@ void CustomsizeEdit::setMaxLength(int maxLen)
 
 void CustomsizeEdit::focusOutEvent(QFocusEvent *event)
 {
-    qDebug() << "focusOutEvent";
     QLineEdit::focusOutEvent(event);
     emit sig_focus_out();
 }

@@ -66,7 +66,6 @@ RegisterDialog::RegisterDialog(QWidget *parent)
         {
             _ui->pass_edit->setEchoMode(QLineEdit::Normal);
         }
-        qDebug() << "Label was clicked!";
     });
 
     connect(_ui->confirm_visible, &AnimatedStateWidget::clicked, this, [this]() {
@@ -79,7 +78,6 @@ RegisterDialog::RegisterDialog(QWidget *parent)
         {
             _ui->confirm_edit->setEchoMode(QLineEdit::Normal);
         }
-        qDebug() << "Label was clicked!";
     });
 
     _countdown_timer = new QTimer(this);
@@ -98,7 +96,6 @@ RegisterDialog::RegisterDialog(QWidget *parent)
 
 RegisterDialog::~RegisterDialog()
 {
-    qDebug() << "destruct RegisterDialog";
     delete _ui;
 }
 
@@ -173,7 +170,6 @@ void RegisterDialog::initHttpHandlers()
         }
         auto email = jsonObj["email"].toString();
         showTip(tr("验证码已经发送到邮箱,注意查收"), true);
-        qDebug() << "Emailis" << email;
     });
     _handlers.insert(ReqId::ID_REG_USER, [this](QJsonObject jsonObj) {
         int error = jsonObj["error"].toInt();
@@ -184,7 +180,6 @@ void RegisterDialog::initHttpHandlers()
         }
         auto email = jsonObj["email"].toString();
         showTip(tr("用户注册成功"), true);
-        qDebug() << "Email is " << email << Qt::endl;
         changeTipPage();
     });
 }

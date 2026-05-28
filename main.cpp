@@ -12,14 +12,12 @@ int main(int argc, char *argv[])
     QFile qss(":/res/style/style.qss");
     if (qss.open(QFile::ReadOnly))
     {
-        qDebug("open success");
         QString style = QLatin1String(qss.readAll());
         a.setStyleSheet(style);
         qss.close();
     }
     else
     {
-        qDebug("open failed");
     }
     
     MainWindow w;

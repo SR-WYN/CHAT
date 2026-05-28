@@ -54,7 +54,6 @@ bool ChatUserList::eventFilter(QObject *watched, QEvent *event)
             {
                 return true;
             }
-            qDebug() << "load more chat user";
             _load_pending = true;
             QTimer::singleShot(100, [this]() {
                 _load_pending = false;

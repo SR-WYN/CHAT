@@ -100,7 +100,6 @@ void SearchList::addTipItem()
 {
     auto *invalid_item = new QWidget();
     QListWidgetItem *item_tmp = new QListWidgetItem;
-    // qDebug()<<"chat_user_wid sizeHint is " << chat_user_wid->sizeHint();
     item_tmp->setSizeHint(QSize(250, 10));
     this->addItem(item_tmp);
     invalid_item->setObjectName("invalid_item");
@@ -109,7 +108,6 @@ void SearchList::addTipItem()
 
     auto *add_user_item = new AddUserItem();
     QListWidgetItem *item = new QListWidgetItem;
-    // qDebug()<<"chat_user_wid sizeHint is " << chat_user_wid->sizeHint();
     item->setSizeHint(add_user_item->sizeHint());
     this->addItem(item);
     this->setItemWidget(item, add_user_item);
@@ -120,21 +118,18 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
     QWidget *widget = this->itemWidget(item);
     if (!widget)
     {
-        qDebug() << "slot item clicked widget is nullptr";
         return;
     }
 
     ListItemBase *customItem = qobject_cast<ListItemBase *>(widget);
     if (!customItem)
     {
-        qDebug() << "slot item clicked customItem is nullptr";
         return;
     }
 
     auto item_type = customItem->getItemType();
     if (item_type == ListItemType::INVALID_ITEM)
     {
-        qDebug() << "slot invalid item clicked";
         return;
     }
 
@@ -165,7 +160,6 @@ void SearchList::slot_user_search(std::shared_ptr<UserProfile> profile)
     closeFindDlg();
     if (profile == nullptr)
     {
-        qDebug() << "slot_user_search profile is nullptr";
         _find_dlg = new StatusDialog(this);
         _find_dlg->setMode(StatusDialog::StatusMode::Fail);
         _find_dlg->show();
@@ -176,7 +170,6 @@ void SearchList::slot_user_search(std::shared_ptr<UserProfile> profile)
         auto self_uid = UserMgr::getInstance().getUid();
         if (self_uid == profile->uid)
         {
-            qDebug() << "don't search myself";
             return;
         }
         bool b_exist = UserMgr::getInstance().checkFriendById(profile->uid);

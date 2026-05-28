@@ -179,7 +179,6 @@ void ChatDialog::slot_loading_chat_user()
     loading_dialog->setMode(StatusDialog::StatusMode::Loading);
     loading_dialog->setModal(true);
     loading_dialog->show();
-    qDebug() << "add new data to list...";
     loadMoreChatUser();
     loading_dialog->deleteLater();
     _b_loading = false;
@@ -192,7 +191,6 @@ void ChatDialog::addLabelGroup(AnimatedStateWidget *label)
 
 void ChatDialog::slot_side_chat()
 {
-    qDebug() << "receive side chat clicked";
     clearLabelState(ui->side_chat_label);
     ui->stackedWidget->setCurrentWidget(ui->chat_page);
     _state = ChatUIMode::CHAT_MODE;
@@ -201,7 +199,6 @@ void ChatDialog::slot_side_chat()
 
 void ChatDialog::slot_side_contact()
 {
-    qDebug() << "receive side contact clicked";
     clearLabelState(ui->side_contact_label);
     ui->stackedWidget->setCurrentWidget(ui->friend_apply_page);
     _state = ChatUIMode::CONTACT_MODE;
@@ -252,10 +249,8 @@ void ChatDialog::handleGlobalMousePress(QMouseEvent *mouse_event)
 
 void ChatDialog::slot_friend_apply(std::shared_ptr<FriendApplyNotify> apply)
 {
-    qDebug() << "receive friend apply, uid is " << apply->applicant.uid;
     if (UserMgr::getInstance().alreadyApply(apply->applicant.uid))
     {
-        qDebug() << "already apply, return";
         return;
     }
     UserMgr::getInstance().addApply(std::make_shared<PendingFriendApplyRow>(*apply));
@@ -266,10 +261,8 @@ void ChatDialog::slot_friend_apply(std::shared_ptr<FriendApplyNotify> apply)
 
 void ChatDialog::slot_add_auth_friend(std::shared_ptr<AuthAcceptedPeer> peer)
 {
-    qDebug() << "receive slot_add_auth_friend uid is " << peer->profile.uid;
     if (UserMgr::getInstance().checkFriendById(peer->profile.uid))
     {
-        qDebug() << peer->profile.loginName << " already is friend";
         return;
     }
     UserMgr::getInstance().addFriend(peer);
@@ -284,10 +277,8 @@ void ChatDialog::slot_add_auth_friend(std::shared_ptr<AuthAcceptedPeer> peer)
 
 void ChatDialog::slot_auth_rsp(std::shared_ptr<AuthAcceptedPeer> peer)
 {
-    qDebug() << "receive slot_auth_rsp uid is " << peer->profile.uid;
     if (UserMgr::getInstance().checkFriendById(peer->profile.uid))
     {
-        qDebug() << peer->profile.loginName << " already is friend";
         return;
     }
     UserMgr::getInstance().addFriend(peer);
@@ -302,7 +293,6 @@ void ChatDialog::slot_auth_rsp(std::shared_ptr<AuthAcceptedPeer> peer)
 
 void ChatDialog::slot_jump_chat_item(std::shared_ptr<UserProfile> profile)
 {
-    qDebug() << "slot jump chat item";
     if (!profile)
     {
         return;
@@ -320,7 +310,6 @@ void ChatDialog::slot_jump_chat_item(std::shared_ptr<UserProfile> profile)
         _chat_item_added.insert(profile->uid, item);
         return;
     }
-    qDebug() << "jump chat item,uid is " << profile->uid;
     ui->chat_user_list->scrollToItem(find_iter.value());
     clearLabelState(ui->side_chat_label);
     setSelectChatItem(profile->uid);
@@ -361,7 +350,6 @@ void ChatDialog::setSelectChatItem(int uid)
     auto find_iter = _chat_item_added.find(uid);
     if (find_iter == _chat_item_added.end())
     {
-        qDebug() << "uid:" << uid << " not found";
         ui->chat_user_list->setCurrentRow(0);
         return;
     }
@@ -409,7 +397,6 @@ void ChatDialog::setSelectChatPage(int uid)
     ListItemBase *customItem = qobject_cast<ListItemBase *>(widget);
     if (!customItem)
     {
-        qDebug() << "slot setSelectChatPage customItem is nullptr";
         return;
     }
     auto itemType = customItem->getItemType();
@@ -527,7 +514,6 @@ void ChatDialog::loadMoreContactUser()
 
 void ChatDialog::slot_loading_contact_user()
 {
-    qDebug() << "slot loading contact user";
     if (_b_loading)
     {
         return;
@@ -537,7 +523,6 @@ void ChatDialog::slot_loading_contact_user()
     loading_dialog->setMode(StatusDialog::StatusMode::Loading);
     loading_dialog->setModal(true);
     loading_dialog->show();
-    qDebug() << "start loading contact user";
     loadMoreContactUser();
     loading_dialog->deleteLater();
     _b_loading = false;
@@ -545,7 +530,6 @@ void ChatDialog::slot_loading_contact_user()
 
 void ChatDialog::slot_friend_info_page(std::shared_ptr<FriendListEntry> entry)
 {
-    qDebug() << "receive switch friend info page sig";
     _last_widget = ui->friend_info_page;
     ui->stackedWidget->setCurrentWidget(ui->friend_info_page);
     ui->friend_info_page->setInfo(entry);
@@ -553,7 +537,6 @@ void ChatDialog::slot_friend_info_page(std::shared_ptr<FriendListEntry> entry)
 
 void ChatDialog::slot_jump_chat_item_from_infopage(std::shared_ptr<FriendListEntry> entry)
 {
-    qDebug() << "receive jump chat item from infopage sig";
     if (!entry)
     {
         return;
@@ -562,7 +545,6 @@ void ChatDialog::slot_jump_chat_item_from_infopage(std::shared_ptr<FriendListEnt
     auto find_iter = _chat_item_added.find(uid);
     if (find_iter != _chat_item_added.end())
     {
-        qDebug() << "jump to chat item , uid is " << uid;
         ui->chat_user_list->scrollToItem(find_iter.value());
         clearLabelState(ui->side_chat_label);
         setSelectChatItem(uid);
@@ -589,24 +571,20 @@ void ChatDialog::slot_item_clicked(QListWidgetItem *item)
     QWidget *widget = ui->chat_user_list->itemWidget(item);
     if (!widget)
     {
-        qDebug() << "slot item clicked widget is nullptr";
         return;
     }
     ListItemBase *customItem = qobject_cast<ListItemBase *>(widget);
     if (!customItem)
     {
-        qDebug() << "slot item clicked customItem is nullptr";
         return;
     }
     auto itemType = customItem->getItemType();
     if (itemType == ListItemType::INVALID_ITEM || itemType == ListItemType::GROUP_TIP_ITEM)
     {
-        qDebug() << "slot invalid item clicked ";
         return;
     }
     if (itemType == ListItemType::CHAT_USER_ITEM)
     {
-        qDebug() << "slot chat user item clicked ";
         auto chat_widget = qobject_cast<ChatUserWidget *>(customItem);
         auto entry = chat_widget->getFriendEntry();
         ui->chat_page->setFriendEntry(entry);
@@ -634,7 +612,6 @@ void ChatDialog::slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg)
     auto customItem = qobject_cast<ListItemBase *>(widget);
     if (!customItem)
     {
-        qDebug() << "slot append send chat msg customItem is nullptr";
         return;
     }
     auto itemType = customItem->getItemType();
@@ -660,7 +637,6 @@ void ChatDialog::slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg)
 
 void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr)
 {
-    qDebug() << "receive slot_text_chat_msg";
     auto find_iter = _chat_item_added.find(msg_ptr->_from_uid);
     if (find_iter != _chat_item_added.end())
     {
@@ -678,7 +654,6 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr)
     auto friend_info = UserMgr::getInstance().getFriendById(msg_ptr->_from_uid);
     if (!friend_info)
     {
-        qDebug() << "slot_text_chat_msg: no friend row for uid" << msg_ptr->_from_uid;
         return;
     }
     auto *chat_user_widget = new ChatUserWidget();

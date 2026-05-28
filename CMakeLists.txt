@@ -21,6 +21,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(Protobuf REQUIRED)
 find_package(gRPC REQUIRED)
 find_package(jsoncpp REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 qt_standard_project_setup()
 
@@ -139,4 +140,5 @@ target_link_libraries(CHAT
     protobuf::libprotobuf
     gRPC::grpc++
     jsoncpp_lib  # 注意：在很多 Linux 发行版中，find_package(jsoncpp) 导出的目标是这个，请根据实际报错调整
+    spdlog::spdlog
 )

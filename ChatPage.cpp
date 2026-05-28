@@ -65,7 +65,6 @@ void ChatPage::on_send_btn_clicked()
     {
         if (msgList[i].content.length() > 1024)
         {
-            qDebug() << "msg content length is too long, length:" << msgList[i].content.length();
             continue;
         }
         QString type = msgList[i].msgFlag;
@@ -115,7 +114,6 @@ void ChatPage::on_send_btn_clicked()
             ui->chat_data_list->appendChatItem(pChatItem);
         }
     }
-    qDebug() << "text_array is " << text_array;
     text_obj["text_array"] = text_array;
     text_obj["fromuid"] = self_info->uid;
     text_obj["touid"] = peer_info->uid();

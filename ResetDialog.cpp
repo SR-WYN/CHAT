@@ -137,13 +137,11 @@ void ResetDialog::showTip(QString str, bool b_ok)
 
 void ResetDialog::slot_return_btn_clicked()
 {
-    qDebug() << "slot_return_btn_clicked";
     emit sig_reset_switch_login();
 }
 
 void ResetDialog::slot_get_verify_btn_clicked()
 {
-    qDebug() << "receive get verify btn clicked ";
     auto email = _ui->email_edit->text();
     auto bcheck = checkEmailValid();
     if (!bcheck)
@@ -170,7 +168,6 @@ void ResetDialog::initHandlers()
         }
         auto email = jsonObj["email"].toString();
         showTip(tr("验证码已发送到邮箱，注意查收"), true);
-        qDebug() << "email is " << email;
     });
     // 注册注册用户回包逻辑
     _handlers.insert(ReqId::ID_RESET_PWD, [this](QJsonObject jsonObj) {
@@ -182,8 +179,6 @@ void ResetDialog::initHandlers()
         }
         auto email = jsonObj["email"].toString();
         showTip(tr("重置成功,点击返回登录"), true);
-        qDebug() << "email is " << email;
-        qDebug() << "user uuid is " << jsonObj["uuid"].toString();
     });
 }
 

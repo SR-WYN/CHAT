@@ -21,7 +21,6 @@ void ConfigMgr::loadConfig()
     QFile file(config_path);
     if (!file.open(QIODevice::ReadOnly))
     {
-        qDebug() << "Critical: config.json missing";
         return;
     }
 
@@ -46,7 +45,6 @@ void ConfigMgr::loadGateServer(const QJsonObject &root)
         int port = gate["port"].toInt();
 
         _url_prefix = QString("http://%1:%2").arg(host).arg(port);
-        qDebug() << "Config Loaded: Gate URL Prefix is" << _url_prefix;
     }
 }
 

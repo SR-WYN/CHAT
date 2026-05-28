@@ -15,7 +15,6 @@ StatusDialog::StatusDialog(QWidget *parent)
 
 StatusDialog::~StatusDialog()
 {
-    qDebug() << "StatusDialog::~StatusDialog";
     delete ui;
 }
 
@@ -49,7 +48,6 @@ void StatusDialog::startLoading()
     QMovie *movie = new QMovie(":/res/loading.gif");
     ui->loading_label->setMovie(movie);
     movie->start();
-    qDebug() << "start loading movie";
 }
 
 void StatusDialog::stopLoading()

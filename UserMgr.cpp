@@ -99,7 +99,6 @@ std::shared_ptr<FriendListEntry> UserMgr::getFriendById(int uid)
     {
         return _friend_map[uid];
     }
-    qDebug() << "not found friend uid is " << uid;
     return nullptr;
 }
 
@@ -110,7 +109,6 @@ void UserMgr::removeFriend(int uid)
         _friend_map.remove(uid);
         return;
     }
-    qDebug() << "not found friend uid is " << uid;
 }
 
 void UserMgr::appendFriendList(const QJsonArray &friend_list)
@@ -224,7 +222,6 @@ void UserMgr::appendFriendChatMsg(int friend_id, const std::vector<std::shared_p
     auto find_iter = _friend_map.find(friend_id);
     if (find_iter == _friend_map.end())
     {
-        qDebug() << "not found friend uid is " << friend_id;
         return;
     }
     find_iter.value()->appendChatMsgs(msg_vec);
@@ -236,7 +233,6 @@ void UserMgr::setFriendChatHistory(int friend_id,
     auto find_iter = _friend_map.find(friend_id);
     if (find_iter == _friend_map.end())
     {
-        qDebug() << "setFriendChatHistory: not found friend uid " << friend_id;
         return;
     }
     find_iter.value()->setChatMsgs(msg_vec);
@@ -252,7 +248,6 @@ void UserMgr::mergeFriendChatHistory(int friend_id,
     auto find_iter = _friend_map.find(friend_id);
     if (find_iter == _friend_map.end())
     {
-        qDebug() << "mergeFriendChatHistory: not found friend uid " << friend_id;
         return;
     }
     find_iter.value()->appendChatMsgs(msg_vec);

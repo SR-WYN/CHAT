@@ -210,7 +210,6 @@ QPixmap MessageTextEdit::getFileIconPixmap(const QString &url)
     QIcon icon = provder.icon(fileinfo);
 
     QString strFileSize = getFileSize(fileinfo.size());
-    //qDebug() << "FileSize=" << fileinfo.size();
 
     QFont font(QString("宋体"),10,QFont::Normal,false);
     QFontMetrics fontMetrics(font);
@@ -264,5 +263,4 @@ QString MessageTextEdit::getFileSize(qint64 size)
 
 void MessageTextEdit::textEditChanged()
 {
-    //qDebug() << "text changed!" << endl;
 }

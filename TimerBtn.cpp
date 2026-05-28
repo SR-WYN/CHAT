@@ -31,7 +31,6 @@ void TimerBtn::mouseReleaseEvent(QMouseEvent *e)
 {
     if (e->button() == Qt::LeftButton)
     {
-        qDebug() << "MyButton was realeased!";
         this->setEnabled(false);
         this->setText(QString::number(_counter));
         _timer->start(1000);

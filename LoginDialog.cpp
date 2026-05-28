@@ -42,13 +42,11 @@ LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), _ui(new Ui::LoginDi
 
 LoginDialog::~LoginDialog()
 {
-    qDebug() << "destruct LoginDialog";
     delete _ui;
 }
 
 void LoginDialog::slot_forget_label_clicked()
 {
-    qDebug() << "slot_forget_label_clicked";
     emit sig_login_switch_reset();
 }
 
@@ -89,8 +87,6 @@ void LoginDialog::initHttpHandlers()
         _uid = si.uid;
         _token = si.token;
 
-        qDebug() << "email is " << email << "\n uid is " << si.uid << "\n host is " << si.host
-                 << "\n Port is " << si.port << "\n Token is " << si.token;
         emit sig_login_connect_tcp(si);
     });
 }
@@ -101,7 +97,6 @@ void LoginDialog::initHead()
     QPixmap originalPixmap(":/res/login.png");
 
     // 设置图片自动缩放
-    qDebug() << originalPixmap.size() << _ui->head_label->size();
     originalPixmap = originalPixmap.scaled(_ui->head_label->size(), Qt::KeepAspectRatio,
                                            Qt::SmoothTransformation);
 
@@ -127,7 +122,6 @@ void LoginDialog::initHead()
 
 void LoginDialog::slot_login_btn_clicked()
 {
-    qDebug() << "slot_login_btn_clicked";
     if (!checkEmailValid() || !checkPwdValid())
     {
         return;
@@ -150,7 +144,6 @@ bool LoginDialog::checkEmailValid()
     QString email = _ui->email_edit->text();
     if (email.isEmpty())
     {
-        qDebug() << "email empty ";
         addTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱不能为空"));
         return false;
     }

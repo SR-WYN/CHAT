@@ -55,7 +55,6 @@ FriendRequestDialog::FriendRequestDialog(QWidget *parent, Mode mode)
 
 FriendRequestDialog::~FriendRequestDialog()
 {
-    qDebug() << "FriendRequestDialog destruct";
     delete ui;
 }
 
@@ -187,7 +186,6 @@ bool FriendRequestDialog::eventFilter(QObject *obj, QEvent *event)
 
 void FriendRequestDialog::slot_more_lb_clicked()
 {
-    qDebug() << "receive more label clicked";
     ui->more_label_widget->hide();
 
     ui->label_list->setFixedWidth(325);
@@ -372,13 +370,10 @@ void FriendRequestDialog::slot_lb_ed_return_pressed()
     connect(lb, &AnimatedStateWidget::clicked, this, [this, lb]() {
         slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
     });
-    qDebug() << "ui->label_list->width() is " << ui->label_list->width();
-    qDebug() << "_tip_cur_point.x() is " << _tip_cur_point.x();
 
     QFontMetrics fontMetrics(lb->font());
     int textWidth = fontMetrics.horizontalAdvance(lb->text());
     int textHeight = fontMetrics.height();
-    qDebug() << "textWidth is " << textWidth;
 
     if (_tip_cur_point.x() + textWidth + TIP_OFFSET + 3 > ui->label_list->width())
     {
@@ -401,7 +396,6 @@ void FriendRequestDialog::slot_lb_ed_return_pressed()
 
 void FriendRequestDialog::slot_remove_friend_label(QString name)
 {
-    qDebug() << "receive close signal";
 
     _label_point.setX(2);
     _label_point.setY(6);
@@ -521,13 +515,10 @@ void FriendRequestDialog::slot_add_friend_label_by_click_tip(QString text)
     connect(lb, &AnimatedStateWidget::clicked, this, [this, lb]() {
         slot_change_friend_label_by_tip(lb->text(), lb->getCurState());
     });
-    qDebug() << "ui->label_list->width() is " << ui->label_list->width();
-    qDebug() << "_tip_cur_point.x() is " << _tip_cur_point.x();
 
     QFontMetrics fontMetrics(lb->font());
     int textWidth = fontMetrics.horizontalAdvance(lb->text());
     int textHeight = fontMetrics.height();
-    qDebug() << "textWidth is " << textWidth;
 
     if (_tip_cur_point.x() + textWidth + TIP_OFFSET + 3 > ui->label_list->width())
     {
@@ -550,7 +541,6 @@ void FriendRequestDialog::slot_add_friend_label_by_click_tip(QString text)
 
 void FriendRequestDialog::slot_cancel_btn_clicked()
 {
-    qDebug() << "cancel";
     reject();
 }
 
@@ -558,10 +548,8 @@ void FriendRequestDialog::slot_sure_btn_clicked()
 {
     if (_mode == Mode::Apply)
     {
-        qDebug() << "Slot Apply Sure called";
         if (!_profile)
         {
-            qDebug() << "FriendRequestDialog: missing search profile";
             return;
         }
         QJsonObject json_obj;
@@ -586,10 +574,8 @@ void FriendRequestDialog::slot_sure_btn_clicked()
     }
     else
     {
-        qDebug() << "AuthenFriend: confirm auth (accept apply)";
         if (!_apply_row)
         {
-            qDebug() << "FriendRequestDialog: missing apply info";
             return;
         }
 
