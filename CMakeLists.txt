@@ -63,43 +63,43 @@ add_custom_command(
 set(CPP_SOURCES
     common/Log.cpp
     main.cpp
-    MainWindow.cpp
-    LoginDialog.cpp
-    RegisterDialog.cpp
-    global.cpp
-    HttpMgr.cpp
-    ConfigMgr.cpp
-    TimerBtn.cpp
-    ResetDialog.cpp
-    HeartBeatMgr.cpp
-    TcpMgr.cpp
-    UserMgr.cpp
-    ChatDialog.cpp
-    CustomsizeEdit.cpp
-    ChatUserList.cpp
-    ChatUserWidget.cpp
-    ListItemBase.cpp
-    ChatPage.cpp
-    ChatView.cpp
-    BubbleFrame.cpp
-    ChatItemBase.cpp
-    MessageTextEdit.cpp
-    TextBubble.cpp
-    PictureBubble.cpp
-    AnimatedStateWidget.cpp
-    SearchList.cpp
-    UserModels.cpp
-    AddUserItem.cpp
-    ApplyFriendPage.cpp
-    FriendLabel.cpp
-    ConUserItem.cpp
-    GroupTipItem.cpp
-    ContactUserList.cpp
-    ApplyFriendItem.cpp
-    ApplyFriendList.cpp
-    FriendInfoPage.cpp
-    StatusDialog.cpp
-    FriendRequestDialog.cpp
+    src/core/global.cpp
+    src/core/ConfigMgr.cpp
+    src/model/UserModels.cpp
+    src/network/HttpMgr.cpp
+    src/network/TcpMgr.cpp
+    src/network/HeartBeatMgr.cpp
+    src/service/UserMgr.cpp
+    src/view/mainwindow/MainWindow.cpp
+    src/view/login/LoginDialog.cpp
+    src/view/login/RegisterDialog.cpp
+    src/view/login/ResetDialog.cpp
+    src/view/login/TimerBtn.cpp
+    src/view/chat/ChatDialog.cpp
+    src/view/chat/ChatPage.cpp
+    src/view/chat/ChatView.cpp
+    src/view/chat/ChatItemBase.cpp
+    src/view/chat/BubbleFrame.cpp
+    src/view/chat/TextBubble.cpp
+    src/view/chat/PictureBubble.cpp
+    src/view/chat/MessageTextEdit.cpp
+    src/view/chat/CustomsizeEdit.cpp
+    src/view/sidebar/ChatUserList.cpp
+    src/view/sidebar/ChatUserWidget.cpp
+    src/view/sidebar/AnimatedStateWidget.cpp
+    src/view/sidebar/FriendLabel.cpp
+    src/view/contacts/ContactUserList.cpp
+    src/view/contacts/ConUserItem.cpp
+    src/view/contacts/GroupTipItem.cpp
+    src/view/contacts/FriendInfoPage.cpp
+    src/view/contacts/FriendRequestDialog.cpp
+    src/view/apply/ApplyFriendPage.cpp
+    src/view/apply/ApplyFriendList.cpp
+    src/view/apply/ApplyFriendItem.cpp
+    src/view/apply/AddUserItem.cpp
+    src/view/common/ListItemBase.cpp
+    src/view/common/StatusDialog.cpp
+    src/view/search/SearchList.cpp
 )
 
 # --- 6. 构建目标 ---
@@ -131,7 +131,23 @@ endif()
 # --- 8. 包含路径与链接 ---
 # 使用 SYSTEM 关键字标记生成代码目录，编译器会减少对这些巨型文件的警告处理，稍微提升速度
 target_include_directories(CHAT SYSTEM PRIVATE ${PROTO_GEN_DIR})
-target_include_directories(CHAT PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/common)
+target_include_directories(CHAT PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/model
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/service
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/mainwindow
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/login
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/chat
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/contacts
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/apply
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/sidebar
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/search
+)
 
 target_link_libraries(CHAT
     PRIVATE
