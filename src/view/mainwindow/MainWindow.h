@@ -7,6 +7,7 @@ class LoginDialog;
 class RegisterDialog;
 class ResetDialog;
 class ChatDialog;
+class SelfInfomation;
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -29,6 +30,8 @@ public slots:
     void slot_reset_dlg_switch_login();
     void slot_chat_dlg_switch_chat();
     void slot_heartbeat_timeout_back_to_login();
+    void slot_self_info_switch_login();
+    void slot_switch_self_info();
 
 private:
     Ui::MainWindow *_ui;
@@ -36,5 +39,6 @@ private:
     RegisterDialog *_reg_dlg;
     ResetDialog *_reset_dlg;
     ChatDialog *_chat_dlg;
+    SelfInfomation *_self_info;
 };
 #endif // MAINWINDOW_H

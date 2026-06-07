@@ -70,6 +70,12 @@ private slots:
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
     void slot_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
     void requestChatHistory(int peer_uid);
+    void slot_side_head_clicked();
+    void slot_back_from_self_info();
+
+signals:
+    void sig_switch_login();
+    void sig_switch_self_info();
 };
 
 #endif // CHATDIALOG_H

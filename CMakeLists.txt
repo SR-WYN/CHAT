@@ -100,6 +100,7 @@ set(CPP_SOURCES
     src/view/common/ListItemBase.cpp
     src/view/common/StatusDialog.cpp
     src/view/search/SearchList.cpp
+    src/view/selfinfo/SelfInfomation.cpp
 )
 
 # --- 6. 构建目标 ---
@@ -147,6 +148,7 @@ target_include_directories(CHAT PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/sidebar
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/common
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/search
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/selfinfo
 )
 
 target_link_libraries(CHAT

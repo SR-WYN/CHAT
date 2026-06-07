@@ -4,6 +4,7 @@
 #include "LoginDialog.h"
 #include "RegisterDialog.h"
 #include "ResetDialog.h"
+#include "SelfInfomation.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
 #include "ui_MainWindow.h"
@@ -11,7 +12,7 @@
 #include <qnamespace.h>
 #include <qwidget.h>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainWindow), _chat_dlg(nullptr)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainWindow), _chat_dlg(nullptr), _self_info(nullptr)
 {
     _ui->setupUi(this);
     this->setWindowIcon(QIcon(":/res/icon.ico"));
@@ -30,6 +31,56 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
             &MainWindow::slot_chat_dlg_switch_chat);
     connect(&HeartBeatMgr::getInstance(), &HeartBeatMgr::sig_heartbeat_timeout, this,
             &MainWindow::slot_heartbeat_timeout_back_to_login, Qt::QueuedConnection);
+}
+
+void MainWindow::slot_switch_self_info()
+{
+    // 隐藏 MainWindow（包含 ChatDialog），弹出独立的个人信息窗口
+    this->hide();
+    if (_self_info == nullptr)
+    {
+        _self_info = new SelfInfomation(nullptr);
+        // 使用 QueuedConnection 避免信号处理过程中对象被销毁
+        connect(_self_info, &SelfInfomation::sig_switch_login, this, &MainWindow::slot_self_info_switch_login, Qt::QueuedConnection);
+        connect(_self_info, &SelfInfomation::sig_back_chat, this, [this]() {
+            _self_info->hide();
+            _self_info->deleteLater();
+            _self_info = nullptr;
+            this->show();
+        });
+    }
+    _self_info->resize(1000, 700);
+    _self_info->show();
+}
+
+void MainWindow::slot_self_info_switch_login()
+{
+    UserMgr::getInstance().clearSession();
+    if (_self_info != nullptr)
+    {
+        _self_info->hide();
+        _self_info->deleteLater();
+        _self_info = nullptr;
+    }
+    if (_chat_dlg != nullptr)
+    {
+        _chat_dlg->hide();
+        _chat_dlg->deleteLater();
+        _chat_dlg = nullptr;
+    }
+    // 先显示 MainWindow，再切换到登录页
+    this->show();
+    _login_dlg = new LoginDialog(this);
+    _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    setCentralWidget(_login_dlg);
+    _login_dlg->show();
+    connect(_login_dlg, &LoginDialog::sig_login_switch_register, this,
+            &MainWindow::slot_login_dlg_switch_register);
+    connect(_login_dlg, &LoginDialog::sig_login_switch_reset, this,
+            &MainWindow::slot_login_dlg_switch_reset);
+    this->setMinimumSize(300, 500);
+    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    this->resize(500, 800);
 }
 
 MainWindow::~MainWindow()
@@ -91,6 +142,8 @@ void MainWindow::slot_chat_dlg_switch_chat()
 {
     _chat_dlg = new ChatDialog(this);
     _chat_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    connect(_chat_dlg, &ChatDialog::sig_switch_login, this, &MainWindow::slot_self_info_switch_login);
+    connect(_chat_dlg, &ChatDialog::sig_switch_self_info, this, &MainWindow::slot_switch_self_info);
     setCentralWidget(_chat_dlg);
     _chat_dlg->show();
     _login_dlg->hide();
@@ -119,7 +172,7 @@ void MainWindow::slot_heartbeat_timeout_back_to_login()
             &MainWindow::slot_login_dlg_switch_register);
     connect(_login_dlg, &LoginDialog::sig_login_switch_reset, this,
             &MainWindow::slot_login_dlg_switch_reset);
-    this->setMinimumSize(0, 0);
+    this->setMinimumSize(300, 500);
     this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-    this->resize(800, 600);
+    this->resize(500, 800);
 }

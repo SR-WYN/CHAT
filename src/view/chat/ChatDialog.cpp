@@ -112,6 +112,8 @@ ChatDialog::ChatDialog(QWidget *parent)
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_text_chat_msg, this, &ChatDialog::slot_text_chat_msg);
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_chat_history, this, &ChatDialog::slot_chat_history);
     refreshChatListFromMemory();
+
+    connect(ui->side_head_label, &AnimatedStateWidget::clicked, this, &ChatDialog::slot_side_head_clicked);
 }
 
 ChatDialog::~ChatDialog()
@@ -679,4 +681,14 @@ void ChatDialog::updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> 
         }
         ui->chat_page->appendChatMsg(msg);
     }
+}
+
+void ChatDialog::slot_side_head_clicked()
+{
+    emit sig_switch_self_info();
+}
+
+void ChatDialog::slot_back_from_self_info()
+{
+    this->show();
 }
