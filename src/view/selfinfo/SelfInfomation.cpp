@@ -12,6 +12,22 @@ SelfInfomation::SelfInfomation(QWidget *parent) :
     ui->setupUi(this);
     setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     setWindowTitle("SelfInfomation");
+    setAttribute(Qt::WA_StyledBackground);
+
+    // 加载当前帐号个人信息并禁用输入
+    auto profile = UserMgr::getInstance().getSelfProfile();
+    if (profile)
+    {
+        ui->name_edit->setText(profile->loginName);
+        ui->nick_edit->setText(profile->nick);
+        ui->sex_edit->setText(profile->sex == 1 ? QStringLiteral("男") : QStringLiteral("女"));
+        ui->email_edit->setText(profile->email);
+    }
+
+    ui->name_edit->setReadOnly(true);
+    ui->nick_edit->setReadOnly(true);
+    ui->sex_edit->setReadOnly(true);
+    ui->email_edit->setReadOnly(true);
 }
 
 SelfInfomation::~SelfInfomation()

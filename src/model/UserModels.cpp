@@ -20,6 +20,7 @@ UserProfile UserProfile::fromUserJson(const QJsonObject &o, const QString &bioKe
     p.icon = o.contains(QStringLiteral("icon")) ? o[QStringLiteral("icon")].toString() : QString();
     p.sex = o[QStringLiteral("sex")].toInt();
     p.bio = o.contains(bioKey) ? o[bioKey].toString() : QString();
+    p.email = o.contains(QStringLiteral("email")) ? o[QStringLiteral("email")].toString() : QString();
     return p;
 }
 

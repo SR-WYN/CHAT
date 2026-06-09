@@ -19,6 +19,8 @@ struct UserProfile
     int sex = 0;
     /** 对应 JSON desc */
     QString bio;
+    /** 邮箱 */
+    QString email;
 
     static UserProfile fromUserJson(const QJsonObject &o,
                                     const QString &bioKey = QStringLiteral("desc"));
