@@ -47,6 +47,17 @@ RegisterDialog::RegisterDialog(QWidget *parent)
     connect(_ui->verify_edit, &QLineEdit::editingFinished, this, [this]() {
         checkVerifyValid();
     });
+    connect(_ui->nick_edit, &QLineEdit::editingFinished, this, [this]() {
+        checkNickValid();
+    });
+    connect(_ui->sex_box, &QComboBox::currentIndexChanged, this, [this]() {
+        checkSexValid();
+    });
+
+    // 初始化性别下拉框
+    _ui->sex_box->addItem(tr("其它"), 0);
+    _ui->sex_box->addItem(tr("男"), 1);
+    _ui->sex_box->addItem(tr("女"), 2);
 
     _ui->pass_visible->setCursor(Qt::PointingHandCursor);
     _ui->confirm_visible->setCursor(Qt::PointingHandCursor);
@@ -217,10 +228,18 @@ void RegisterDialog::slot_confirm_btn_clicked()
         return;
     }
 
+    // 昵称和性别校验
+    if (!checkNickValid() || !checkSexValid())
+    {
+        return;
+    }
+
     // 发送http请求注册用户
     QJsonObject json_obj;
     json_obj["user"] = _ui->user_edit->text();
     json_obj["email"] = _ui->email_edit->text();
+    json_obj["nick"] = _ui->nick_edit->text();
+    json_obj["sex"] = _ui->sex_box->currentData().toInt();
     auto passwd = _ui->pass_edit->text(); // 加密
     json_obj["passwd"] = xorString(passwd);
     auto confirm = _ui->confirm_edit->text(); // 加密
@@ -299,6 +318,29 @@ bool RegisterDialog::checkVerifyValid()
         return false;
     }
     delTipErr(TipErr::TIP_VERIFY_ERR);
+    return true;
+}
+
+bool RegisterDialog::checkNickValid()
+{
+    auto nick = _ui->nick_edit->text();
+    if (nick == "")
+    {
+        addTipErr(TipErr::TIP_USER_ERR, tr("昵称不能为空"));
+        return false;
+    }
+    delTipErr(TipErr::TIP_USER_ERR);
+    return true;
+}
+
+bool RegisterDialog::checkSexValid()
+{
+    if (_ui->sex_box->currentIndex() < 0)
+    {
+        addTipErr(TipErr::TIP_USER_ERR, tr("性别不能为空"));
+        return false;
+    }
+    delTipErr(TipErr::TIP_USER_ERR);
     return true;
 }
 

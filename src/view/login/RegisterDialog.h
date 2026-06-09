@@ -36,6 +36,8 @@ private:
     bool checkPassValid();
     bool checkConfirmValid();
     bool checkVerifyValid();
+    bool checkNickValid();
+    bool checkSexValid();
     void addTipErr(TipErr te, QString tips);
     void delTipErr(TipErr te);
     void changeTipPage();
