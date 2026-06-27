@@ -2,7 +2,7 @@
 #include "AnimatedStateWidget.h"
 #include "ChatItemBase.h"
 #include "HttpImageDownloadMgr.h"
-#include "HttpUploadMgr.h"
+#include "HttpMgr.h"
 #include "MessageTextEdit.h"
 #include "PictureBubble.h"
 #include "TcpMgr.h"
@@ -55,7 +55,7 @@ ChatPage::ChatPage(QWidget *parent) : QWidget(parent), ui(new Ui::ChatPage)
             &ChatPage::onFileLabelClicked);
     connect(&TcpMgr::getInstance(), &TcpMgr::sig_file_transfer_rsp, this,
             &ChatPage::onFileTransferRsp);
-    connect(&HttpUploadMgr::getInstance(), &HttpUploadMgr::sig_upload_images_finished, this,
+    connect(&HttpMgr::getInstance(), &HttpMgr::sig_upload_images_finished, this,
             &ChatPage::onImageUploadFinished);
     connect(&HttpImageDownloadMgr::getInstance(), &HttpImageDownloadMgr::sig_image_download_finished,
             this, &ChatPage::onImageDownloadFinished);
@@ -254,8 +254,8 @@ void ChatPage::onFileTransferRsp(int err, QString host, QString port, QString to
         _uploading_images = false;
         return;
     }
-    HttpUploadMgr::getInstance().uploadImages(host, port, UserMgr::getInstance().getUid(),
-                                              token, _pending_image_paths);
+    HttpMgr::getInstance().uploadImages(host, port, UserMgr::getInstance().getUid(), token,
+                                        _pending_image_paths);
 }
 
 void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &results,

@@ -67,7 +67,6 @@ set(CPP_SOURCES
     src/core/ConfigMgr.cpp
     src/model/UserModels.cpp
     src/network/HttpMgr.cpp
-    src/network/HttpUploadMgr.cpp
     src/network/HttpImageDownloadMgr.cpp
     src/network/TcpMgr.cpp
     src/network/HeartBeatMgr.cpp
