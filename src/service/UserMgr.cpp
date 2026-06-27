@@ -1,4 +1,6 @@
 #include "UserMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include <QDebug>
 #include <QJsonObject>
 #include <memory>
@@ -15,6 +17,7 @@ UserMgr::~UserMgr()
 void UserMgr::setToken(const QString &token)
 {
     _token = token;
+    LOGI(LogModule::User, "UserMgr setToken len={}", token.length());
 }
 
 int UserMgr::getUid() const
@@ -39,16 +42,18 @@ bool UserMgr::alreadyApply(int from_uid)
 
 void UserMgr::addApply(std::shared_ptr<PendingFriendApplyRow> apply_info)
 {
+    LOGI(LogModule::User, "UserMgr addApply from uid={}", apply_info->profile.uid);
     _apply_list[apply_info->profile.uid] = apply_info;
 }
 
 void UserMgr::removeApply(std::shared_ptr<PendingFriendApplyRow> apply_info)
 {
-    _apply_list.erase(apply_info->profile.uid);
+    removeApply(apply_info->profile.uid);
 }
 
 void UserMgr::removeApply(int from_uid)
 {
+    LOGI(LogModule::User, "UserMgr removeApply from uid={}", from_uid);
     _apply_list.erase(from_uid);
 }
 
@@ -70,10 +75,16 @@ const std::unordered_map<int, std::shared_ptr<PendingFriendApplyRow>> &UserMgr::
 void UserMgr::setSelfProfile(std::shared_ptr<SelfProfile> profile)
 {
     _self_profile = std::move(profile);
+    if (_self_profile)
+    {
+        LOGI(LogModule::User, "UserMgr setSelfProfile uid={} name={}", _self_profile->uid,
+             _self_profile->loginName.toStdString());
+    }
 }
 
 void UserMgr::appendApplyList(const QJsonArray &apply_list)
 {
+    LOGI(LogModule::User, "UserMgr appendApplyList count={}", apply_list.size());
     for (const QJsonValue &value : apply_list)
     {
         const QJsonObject jo = value.toObject();
@@ -90,6 +101,8 @@ bool UserMgr::checkFriendById(int uid)
 void UserMgr::addFriend(std::shared_ptr<AuthAcceptedPeer> peer)
 {
     auto entry = std::make_shared<FriendListEntry>(*peer);
+    LOGI(LogModule::User, "UserMgr addFriend uid={} name={}", entry->uid(),
+         entry->listDisplayName().toStdString());
     _friend_map[peer->profile.uid] = entry;
 }
 
@@ -106,6 +119,7 @@ void UserMgr::removeFriend(int uid)
 {
     if (_friend_map.contains(uid))
     {
+        LOGI(LogModule::User, "UserMgr removeFriend uid={}", uid);
         _friend_map.remove(uid);
         return;
     }
@@ -113,6 +127,7 @@ void UserMgr::removeFriend(int uid)
 
 void UserMgr::appendFriendList(const QJsonArray &friend_list)
 {
+    LOGI(LogModule::User, "UserMgr appendFriendList count={}", friend_list.size());
     for (const QJsonValue &value : friend_list)
     {
         const QJsonObject jo = value.toObject();
@@ -165,6 +180,11 @@ void UserMgr::updateChatLoadedCount()
     }
 
     _chat_loaded = end;
+}
+
+void UserMgr::resetChatLoaded()
+{
+    _chat_loaded = 0;
 }
 
 std::vector<std::shared_ptr<FriendListEntry>> UserMgr::getContactListPerpage()
@@ -222,9 +242,12 @@ void UserMgr::appendFriendChatMsg(int friend_id, const std::vector<std::shared_p
     auto find_iter = _friend_map.find(friend_id);
     if (find_iter == _friend_map.end())
     {
+        LOGW(LogModule::User, "UserMgr appendFriendChatMsg friend not found uid={}", friend_id);
         return;
     }
     find_iter.value()->appendChatMsgs(msg_vec);
+    LOGD(LogModule::User, "UserMgr appendFriendChatMsg uid={} count={}", friend_id,
+         static_cast<int>(msg_vec.size()));
 }
 
 void UserMgr::setFriendChatHistory(int friend_id,
@@ -233,9 +256,12 @@ void UserMgr::setFriendChatHistory(int friend_id,
     auto find_iter = _friend_map.find(friend_id);
     if (find_iter == _friend_map.end())
     {
+        LOGW(LogModule::User, "UserMgr setFriendChatHistory friend not found uid={}", friend_id);
         return;
     }
     find_iter.value()->setChatMsgs(msg_vec);
+    LOGI(LogModule::User, "UserMgr setFriendChatHistory uid={} count={}", friend_id,
+         static_cast<int>(msg_vec.size()));
 }
 
 void UserMgr::mergeFriendChatHistory(int friend_id,
@@ -248,9 +274,12 @@ void UserMgr::mergeFriendChatHistory(int friend_id,
     auto find_iter = _friend_map.find(friend_id);
     if (find_iter == _friend_map.end())
     {
+        LOGW(LogModule::User, "UserMgr mergeFriendChatHistory friend not found uid={}", friend_id);
         return;
     }
     find_iter.value()->appendChatMsgs(msg_vec);
+    LOGI(LogModule::User, "UserMgr mergeFriendChatHistory uid={} count={}", friend_id,
+         static_cast<int>(msg_vec.size()));
 }
 
 std::vector<int> UserMgr::getAllFriendUids() const
@@ -266,6 +295,7 @@ std::vector<int> UserMgr::getAllFriendUids() const
 
 void UserMgr::clearSession()
 {
+    LOGI(LogModule::User, "UserMgr clearSession uid={}", getUid());
     _token.clear();
     _apply_list.clear();
     _self_profile.reset();

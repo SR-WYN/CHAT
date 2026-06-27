@@ -3,6 +3,8 @@
 #include "CustomsizeEdit.h"
 #include "FriendRequestDialog.h"
 #include "ListItemBase.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
 #include "UserModels.h"
@@ -19,13 +21,9 @@ SearchList::SearchList(QWidget *parent)
     Q_UNUSED(parent);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    // 安装事件过滤器
     this->viewport()->installEventFilter(this);
-    // 连接点击的信号和槽
     connect(this, &QListWidget::itemClicked, this, &SearchList::slot_item_clicked);
-    // 添加条目
     addTipItem();
-    // 连接搜索条目
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_user_search, this,
             &SearchList::slot_user_search);
 }
@@ -47,32 +45,27 @@ void SearchList::setSearchEdit(QWidget *edit)
 
 bool SearchList::eventFilter(QObject *watched, QEvent *event)
 {
-    // 检查事件是否是鼠标悬浮进入或离开
     if (watched == this->viewport())
     {
         if (event->type() == QEvent::Enter)
         {
-            // 鼠标悬浮，显示滚动条
             this->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         }
         else if (event->type() == QEvent::Leave)
         {
-            // 鼠标离开，隐藏滚动条
             this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         }
     }
 
-    // 检查事件是否是鼠标滚轮事件
     if (watched == this->viewport() && event->type() == QEvent::Wheel)
     {
         QWheelEvent *wheelEvent = static_cast<QWheelEvent *>(event);
         int numDegrees = wheelEvent->angleDelta().y() / 8;
-        int numSteps = numDegrees / 15; // 计算滚动步数
+        int numSteps = numDegrees / 15;
 
-        // 设置滚动幅度
         this->verticalScrollBar()->setValue(this->verticalScrollBar()->value() - numSteps);
 
-        return true; // 停止事件传递
+        return true;
     }
 
     return QListWidget::eventFilter(watched, event);
@@ -142,6 +135,7 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
         waitPending(true);
         auto search_edit = dynamic_cast<CustomsizeEdit *>(_search_edit);
         auto uid_str = search_edit->text();
+        LOGI(LogModule::Ui, "search user uid={}", uid_str.toStdString());
         QJsonObject json_obj;
         json_obj["uid"] = uid_str;
         QJsonDocument doc(json_obj);
@@ -150,7 +144,6 @@ void SearchList::slot_item_clicked(QListWidgetItem *item)
         return;
     }
 
-    // 清除弹出框
     closeFindDlg();
 }
 
@@ -160,6 +153,7 @@ void SearchList::slot_user_search(std::shared_ptr<UserProfile> profile)
     closeFindDlg();
     if (profile == nullptr)
     {
+        LOGW(LogModule::Ui, "search user not found");
         _find_dlg = new StatusDialog(this);
         _find_dlg->setMode(StatusDialog::StatusMode::Fail);
         _find_dlg->show();
@@ -170,14 +164,18 @@ void SearchList::slot_user_search(std::shared_ptr<UserProfile> profile)
         auto self_uid = UserMgr::getInstance().getUid();
         if (self_uid == profile->uid)
         {
+            LOGW(LogModule::Ui, "search user is self uid={}", self_uid);
             return;
         }
         bool b_exist = UserMgr::getInstance().checkFriendById(profile->uid);
         if (b_exist)
         {
+            LOGI(LogModule::Ui, "search user already friend uid={}", profile->uid);
             emit sig_jump_chat_item(profile);
             return;
         }
+        LOGI(LogModule::Ui, "search user found uid={} name={}", profile->uid,
+             profile->loginName.toStdString());
         _find_dlg = new StatusDialog(this);
         _find_dlg->setMode(StatusDialog::StatusMode::Success);
         _find_dlg->setSearchInfo(profile);

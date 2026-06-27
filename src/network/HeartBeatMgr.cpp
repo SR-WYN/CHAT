@@ -1,4 +1,6 @@
 #include "HeartBeatMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "TcpMgr.h"
 #include <qdebug.h>
 
@@ -36,6 +38,10 @@ void HeartBeatMgr::registerHandlers(TcpMgr *tcp_mgr)
 
 void HeartBeatMgr::notePongReceived()
 {
+    if (_missed_pong_count > 0)
+    {
+        LOGI(LogModule::Tcp, "heartbeat pong received, missed reset from {}", _missed_pong_count);
+    }
     _missed_pong_count = 0;
     _awaiting_pong = false;
 }
@@ -49,6 +55,10 @@ void HeartBeatMgr::onTcpLoginOk()
 
 void HeartBeatMgr::stop()
 {
+    if (_running)
+    {
+        LOGI(LogModule::Tcp, "heartbeat stopped");
+    }
     _ping_timer.stop();
     _running = false;
     _awaiting_pong = false;
@@ -63,6 +73,7 @@ void HeartBeatMgr::start()
     }
     _running = true;
     _ping_timer.start();
+    LOGI(LogModule::Tcp, "heartbeat started interval={}ms", HEARTBEAT_PING_INTERVAL_MS);
 }
 
 void HeartBeatMgr::slot_ping_timer_timeout()
@@ -84,6 +95,7 @@ void HeartBeatMgr::bumpMissedPongIfNeeded()
     if (_awaiting_pong)
     {
         ++_missed_pong_count;
+        LOGW(LogModule::Tcp, "heartbeat missed pong count={}", _missed_pong_count);
     }
 }
 
@@ -93,6 +105,8 @@ void HeartBeatMgr::disconnectIfMissedTooMany()
     {
         return;
     }
+    LOGE(LogModule::Tcp, "heartbeat timeout missed={} threshold={}", _missed_pong_count,
+         HEARTBEAT_MAX_MISSED_PONG);
     stop();
     emit sig_heartbeat_timeout();
 }

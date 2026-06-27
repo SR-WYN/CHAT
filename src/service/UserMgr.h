@@ -38,6 +38,7 @@ public:
     std::vector<std::shared_ptr<FriendListEntry>> getChatListPerpage();
     bool isLoadChatFinish();
     void updateChatLoadedCount();
+    void resetChatLoaded();
     std::vector<std::shared_ptr<FriendListEntry>> getContactListPerpage();
     void updateContactLoadedCount();
     bool isLoadContactFinish();

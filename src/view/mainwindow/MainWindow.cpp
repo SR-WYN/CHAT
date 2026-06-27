@@ -2,6 +2,8 @@
 #include "ChatDialog.h"
 #include "HeartBeatMgr.h"
 #include "LoginDialog.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "RegisterDialog.h"
 #include "ResetDialog.h"
 #include "SelfInfomation.h"
@@ -35,12 +37,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
 
 void MainWindow::slot_switch_self_info()
 {
-    // 隐藏 MainWindow（包含 ChatDialog），弹出独立的个人信息窗口
+    LOGI(LogModule::Ui, "switch to self info");
     this->hide();
     if (_self_info == nullptr)
     {
         _self_info = new SelfInfomation(nullptr);
-        // 使用 QueuedConnection 避免信号处理过程中对象被销毁
         connect(_self_info, &SelfInfomation::sig_switch_login, this, &MainWindow::slot_self_info_switch_login, Qt::QueuedConnection);
         connect(_self_info, &SelfInfomation::sig_back_chat, this, [this]() {
             _self_info->hide();
@@ -55,6 +56,7 @@ void MainWindow::slot_switch_self_info()
 
 void MainWindow::slot_self_info_switch_login()
 {
+    LOGI(LogModule::Ui, "self info switch to login");
     UserMgr::getInstance().clearSession();
     if (_self_info != nullptr)
     {
@@ -68,7 +70,6 @@ void MainWindow::slot_self_info_switch_login()
         _chat_dlg->deleteLater();
         _chat_dlg = nullptr;
     }
-    // 先显示 MainWindow，再切换到登录页
     this->show();
     _login_dlg = new LoginDialog(this);
     _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
@@ -90,6 +91,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::slot_login_dlg_switch_register()
 {
+    LOGI(LogModule::Ui, "switch to register dialog");
     _reg_dlg = new RegisterDialog(this);
     _reg_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     connect(_reg_dlg, &RegisterDialog::sig_register_switch_login, this,
@@ -101,6 +103,7 @@ void MainWindow::slot_login_dlg_switch_register()
 
 void MainWindow::slot_register_dlg_switch_login()
 {
+    LOGI(LogModule::Ui, "register dialog switch to login");
     _login_dlg = new LoginDialog(this);
     _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     setCentralWidget(_login_dlg);
@@ -114,6 +117,7 @@ void MainWindow::slot_register_dlg_switch_login()
 
 void MainWindow::slot_login_dlg_switch_reset()
 {
+    LOGI(LogModule::Ui, "switch to reset dialog");
     _reset_dlg = new ResetDialog(this);
     _reset_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     setCentralWidget(_reset_dlg);
@@ -126,6 +130,7 @@ void MainWindow::slot_login_dlg_switch_reset()
 
 void MainWindow::slot_reset_dlg_switch_login()
 {
+    LOGI(LogModule::Ui, "reset dialog switch to login");
     _login_dlg = new LoginDialog(this);
     _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     setCentralWidget(_login_dlg);
@@ -140,6 +145,7 @@ void MainWindow::slot_reset_dlg_switch_login()
 
 void MainWindow::slot_chat_dlg_switch_chat()
 {
+    LOGI(LogModule::Ui, "switch to chat dialog");
     _chat_dlg = new ChatDialog(this);
     _chat_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
     connect(_chat_dlg, &ChatDialog::sig_switch_login, this, &MainWindow::slot_self_info_switch_login);
@@ -147,8 +153,6 @@ void MainWindow::slot_chat_dlg_switch_chat()
     setCentralWidget(_chat_dlg);
     _chat_dlg->show();
     _login_dlg->hide();
-    // 与 ChatDialog.ui 的最小尺寸一致，避免沿用登录窗的窄宽度导致聊天区被压扁；
-    // 并主动 resize，使“首屏可见区域”等于设计布局，而不只提高 setMinimumSize。
     this->setMinimumSize(1200, 800);
     this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
     this->resize(1200, 800);
@@ -156,6 +160,7 @@ void MainWindow::slot_chat_dlg_switch_chat()
 
 void MainWindow::slot_heartbeat_timeout_back_to_login()
 {
+    LOGW(LogModule::Ui, "heartbeat timeout, back to login");
     QMessageBox::warning(this, tr("连接已断开"), tr("与服务器的心跳超时，请重新登录。"));
     UserMgr::getInstance().clearSession();
     if (_chat_dlg != nullptr)

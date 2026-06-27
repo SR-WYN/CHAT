@@ -1,6 +1,8 @@
 #include "ResetDialog.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "ui_ResetDialog.h"
 #include <QDebug>
 #include <QRegularExpression>
@@ -56,18 +58,13 @@ bool ResetDialog::checkPassValid()
     auto pass = _ui->pwd_edit->text();
     if (pass.length() < 6 || pass.length() > 15)
     {
-        // 提示长度不准确
         addTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
         return false;
     }
-    // 创建一个正则表达式对象，按照上述密码要求
-    // 这个正则表达式解释：
-    // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ 密码长度至少6，可以是字母、数字和特定的特殊字符
     QRegularExpression regExp("^[a-zA-Z0-9!@#$%^&*]{6,15}$");
     bool match = regExp.match(pass).hasMatch();
     if (!match)
     {
-        // 提示字符非法
         addTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;
     }
@@ -77,14 +74,11 @@ bool ResetDialog::checkPassValid()
 
 bool ResetDialog::checkEmailValid()
 {
-    // 验证邮箱的地址正则表达式
     auto email = _ui->email_edit->text();
-    // 邮箱地址的正则表达式
     QRegularExpression regex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
-    bool match = regex.match(email).hasMatch(); // 执行正则表达式匹配
+    bool match = regex.match(email).hasMatch();
     if (!match)
     {
-        // 提示邮箱不正确
         addTipErr(TipErr::TIP_EMAIL_ERR, tr("邮箱地址不正确"));
         return false;
     }
@@ -137,6 +131,7 @@ void ResetDialog::showTip(QString str, bool b_ok)
 
 void ResetDialog::slot_return_btn_clicked()
 {
+    LOGI(LogModule::Ui, "reset return to login");
     emit sig_reset_switch_login();
 }
 
@@ -148,7 +143,7 @@ void ResetDialog::slot_get_verify_btn_clicked()
     {
         return;
     }
-    // 发送http请求获取验证码
+    LOGI(LogModule::Ui, "reset get verify code email={}", email.toStdString());
     QJsonObject json_obj;
     json_obj["email"] = email;
     HttpMgr::getInstance().postHttpReq(
@@ -158,26 +153,28 @@ void ResetDialog::slot_get_verify_btn_clicked()
 
 void ResetDialog::initHandlers()
 {
-    // 注册获取验证码回包逻辑
     _handlers.insert(ReqId::ID_GET_VERIFY_CODE, [this](QJsonObject jsonObj) {
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
         {
+            LOGE(LogModule::Ui, "reset get verify code failed error={}", error);
             showTip(tr("参数错误"), false);
             return;
         }
         auto email = jsonObj["email"].toString();
+        LOGI(LogModule::Ui, "reset get verify code success email={}", email.toStdString());
         showTip(tr("验证码已发送到邮箱，注意查收"), true);
     });
-    // 注册注册用户回包逻辑
     _handlers.insert(ReqId::ID_RESET_PWD, [this](QJsonObject jsonObj) {
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
         {
+            LOGE(LogModule::Ui, "reset pwd failed error={}", error);
             showTip(tr("参数错误"), false);
             return;
         }
         auto email = jsonObj["email"].toString();
+        LOGI(LogModule::Ui, "reset pwd success email={}", email.toStdString());
         showTip(tr("重置成功,点击返回登录"), true);
     });
 }
@@ -186,26 +183,25 @@ void ResetDialog::slot_reset_mod_finish(ReqId id, QString res, ErrorCodes err)
 {
     if (err != ErrorCodes::SUCCESS)
     {
+        LOGE(LogModule::Ui, "reset network error req_id={} err={}", static_cast<int>(id),
+             static_cast<int>(err));
         showTip(tr("网络请求错误"), false);
         return;
     }
-    // 解析 JSON 字符串,res需转化为QByteArray
     QJsonDocument jsonDoc = QJsonDocument::fromJson(res.toUtf8());
-    // json解析错误
     if (jsonDoc.isNull())
     {
+        LOGE(LogModule::Ui, "reset response json parse failed: {}", res.toStdString());
         showTip(tr("json解析错误"), false);
         return;
     }
-    // json 解析错误
     if (!jsonDoc.isObject())
     {
+        LOGE(LogModule::Ui, "reset response is not object: {}", res.toStdString());
         showTip(tr("json解析错误"), false);
         return;
     }
-    // 调用对应的逻辑,根据id回调。
     _handlers[id](jsonDoc.object());
-    return;
 }
 
 void ResetDialog::slot_confirm_btn_clicked()
@@ -230,7 +226,7 @@ void ResetDialog::slot_confirm_btn_clicked()
     {
         return;
     }
-    // 发送http重置用户请求
+    LOGI(LogModule::Ui, "reset confirm email={}", _ui->email_edit->text().toStdString());
     QJsonObject json_obj;
     json_obj["user"] = _ui->user_edit->text();
     json_obj["email"] = _ui->email_edit->text();

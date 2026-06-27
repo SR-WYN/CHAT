@@ -2,6 +2,8 @@
 #include "AnimatedStateWidget.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "TcpMgr.h"
 #include "global.h"
 #include "ui_LoginDialog.h"
@@ -26,16 +28,12 @@ LoginDialog::LoginDialog(QWidget *parent) : QDialog(parent), _ui(new Ui::LoginDi
     connect(_ui->login_btn, &QPushButton::clicked, this, &LoginDialog::slot_login_btn_clicked);
     initHead();
     initHttpHandlers();
-    // 连接登录回包信号
     connect(HttpMgr::getInstancePtr(), &HttpMgr::sig_login_mod_finish, this,
             &LoginDialog::slot_login_mod_finish);
-    // 连接tcp连接信号
     connect(this, &LoginDialog::sig_login_connect_tcp, TcpMgr::getInstancePtr(),
             &TcpMgr::slot_tcp_connect);
-    // 连接tcp管理者发出的连接成功信号
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_con_success, this,
             &LoginDialog::slot_tcp_con_success);
-    // 连接tcp管理者发出的失败信号
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_login_failed, this,
             &LoginDialog::slot_login_failed);
 }
@@ -52,7 +50,6 @@ void LoginDialog::slot_forget_label_clicked()
 
 void LoginDialog::initHttpHandlers()
 {
-    // 注册获取登录回包逻辑
     _handlers.insert(ReqId::ID_LOGIN_USER, [this](QJsonObject jsonObj) {
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
@@ -73,11 +70,11 @@ void LoginDialog::initHttpHandlers()
                 tip = tr("登录失败，错误码: %1").arg(error);
                 break;
             }
+            LOGE(LogModule::Ui, "login http failed error={} tip={}", error, tip.toStdString());
             showTip(tip, false);
             enableBtn(true);
             return;
         }
-        // 发送信号通知tcpMgr发送长连接
         auto email = jsonObj["email"].toString();
         ServerInfo si;
         si.uid = jsonObj["uid"].toInt();
@@ -86,6 +83,8 @@ void LoginDialog::initHttpHandlers()
         si.token = jsonObj["token"].toString();
         _uid = si.uid;
         _token = si.token;
+        LOGI(LogModule::Ui, "login http success uid={} chat_server={}:{} token_len={}", si.uid,
+             si.host.toStdString(), si.port.toStdString(), si.token.length());
 
         emit sig_login_connect_tcp(si);
     });
@@ -93,30 +92,24 @@ void LoginDialog::initHttpHandlers()
 
 void LoginDialog::initHead()
 {
-    // 加载图片
     QPixmap originalPixmap(":/res/login.png");
 
-    // 设置图片自动缩放
     originalPixmap = originalPixmap.scaled(_ui->head_label->size(), Qt::KeepAspectRatio,
                                            Qt::SmoothTransformation);
 
-    // 创建一个和原始图片相同大小的QPixmap，同于绘制圆角图片
     QPixmap roundedPixmap(originalPixmap.size());
-    roundedPixmap.fill(Qt::transparent); // 填充透明背景
+    roundedPixmap.fill(Qt::transparent);
 
     QPainter painter(&roundedPixmap);
-    painter.setRenderHint(QPainter::Antialiasing); // 设置抗锯齿，使圆角更平滑
+    painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-    // 使用QPainterPath绘制圆角图片
     QPainterPath path;
     path.addRoundedRect(0, 0, originalPixmap.width(), originalPixmap.height(), 10, 10);
     painter.setClipPath(path);
 
-    // 将原始图片绘制到roundedPixmap上
     painter.drawPixmap(0, 0, originalPixmap);
 
-    // 设置绘制好的圆角图片到QLabel
     _ui->head_label->setPixmap(roundedPixmap);
 }
 
@@ -130,7 +123,7 @@ void LoginDialog::slot_login_btn_clicked()
 
     auto email = _ui->email_edit->text();
     auto pwd = _ui->pass_edit->text();
-    // 发送http请求登录
+    LOGI(LogModule::Ui, "login button clicked email={}", email.toStdString());
     QJsonObject json_obj;
     json_obj["email"] = email;
     json_obj["passwd"] = xorString(pwd);
@@ -156,18 +149,13 @@ bool LoginDialog::checkPwdValid()
     auto pass = _ui->pass_edit->text();
     if (pass.length() < 6 || pass.length() > 15)
     {
-        // 提示长度不准确
         addTipErr(TipErr::TIP_PWD_ERR, tr("密码长度应为6~15"));
         return false;
     }
-    // 创建一个正则表达式对象，按照上述密码要求
-    // 这个正则表达式解释：
-    // ^[a-zA-Z0-9!@#$%^&*]{6,15}$ 密码长度至少6，可以是字母、数字和特定的特殊字符
     QRegularExpression regExp("^[a-zA-Z0-9!@#$%^&*]{6,15}$");
     bool match = regExp.match(pass).hasMatch();
     if (!match)
     {
-        // 提示字符非法
         addTipErr(TipErr::TIP_PWD_ERR, tr("不能包含非法字符"));
         return false;
     }
@@ -216,24 +204,24 @@ void LoginDialog::slot_login_mod_finish(ReqId id, QString res, ErrorCodes err)
 {
     if (err != ErrorCodes::SUCCESS)
     {
+        LOGE(LogModule::Ui, "login network error req_id={} err={}", static_cast<int>(id),
+             static_cast<int>(err));
         showTip(tr("网络请求错误"), false);
         return;
     }
-    // 解析 JSON 字符串，res需转化为QByteArray
     QJsonDocument jsonDoc = QJsonDocument::fromJson(res.toUtf8());
-    // json 解析错误
     if (jsonDoc.isNull())
     {
+        LOGE(LogModule::Ui, "login response json parse failed: {}", res.toStdString());
         showTip(tr("json解析错误"), false);
         return;
     }
-    // json 解析错误
     if (!jsonDoc.isObject())
     {
+        LOGE(LogModule::Ui, "login response is not object: {}", res.toStdString());
         showTip(tr("json解析错误"), false);
         return;
     }
-    // 调用对应逻辑，根据id回调
     _handlers[id](jsonDoc.object());
 }
 
@@ -249,11 +237,13 @@ void LoginDialog::slot_tcp_con_success(bool bsuccess)
         QJsonDocument doc(json_obj);
         QString json_string = doc.toJson(QJsonDocument::Indented);
 
-        // 发送tcp请求给chat server
+        LOGI(LogModule::Ui, "tcp connected, sending chat login uid={} token_len={}", _uid,
+             _token.length());
         emit TcpMgr::getInstance().sig_send_data(ReqId::ID_CHAT_LOGIN, json_string);
     }
     else
     {
+        LOGE(LogModule::Ui, "tcp connection failed");
         showTip(tr("网络异常"), false);
         enableBtn(true);
     }
@@ -261,7 +251,8 @@ void LoginDialog::slot_tcp_con_success(bool bsuccess)
 
 void LoginDialog::slot_login_failed(int err)
 {
-    QString relust = QString("登陆失败, err is %1").arg(err);
-    showTip(relust, false);
+    QString result = QString("登陆失败, err is %1").arg(err);
+    LOGE(LogModule::Ui, "chat login failed err={}", err);
+    showTip(result, false);
     enableBtn(true);
 }

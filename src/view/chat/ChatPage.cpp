@@ -2,6 +2,8 @@
 #include "AnimatedStateWidget.h"
 #include "ChatItemBase.h"
 #include "HttpMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "MessageTextEdit.h"
 #include "PictureBubble.h"
 #include "TcpMgr.h"
@@ -80,6 +82,7 @@ void ChatPage::onFileLabelClicked()
                                  QStringLiteral("All Files (*)")};
     QStringList file_names = QFileDialog::getOpenFileNames(
         this, QStringLiteral("选择图片"), QString(), filters.join(QStringLiteral(";;")));
+    LOGI(LogModule::Ui, "onFileLabelClicked selected count={}", file_names.size());
     for (const QString &file_name : file_names)
     {
         if (!file_name.isEmpty())
@@ -116,13 +119,13 @@ PictureBubble *ChatPage::appendImageBubble(const QString &image_source, ChatRole
         pix = loadImageScaled(image_source);
         if (pix.isNull())
         {
+            LOGE(LogModule::Ui, "appendImageBubble load failed path={}", image_source.toStdString());
             delete pChatItem;
             return nullptr;
         }
     }
     else
     {
-        // 网络图片先显示占位图，异步下载完成后更新
         pix = QPixmap(kMaxImageWidth, kMaxImageHeight);
         pix.fill(Qt::lightGray);
     }
@@ -144,6 +147,7 @@ void ChatPage::on_send_btn_clicked()
 {
     if (_peer == nullptr)
     {
+        LOGW(LogModule::Ui, "on_send_btn_clicked no peer selected");
         return;
     }
     auto self_info = UserMgr::getInstance().getSelfProfile();
@@ -159,6 +163,9 @@ void ChatPage::on_send_btn_clicked()
     QJsonArray text_array;
     int text_size = 0;
     QVector<QString> image_paths;
+
+    LOGI(LogModule::Ui, "on_send_btn_clicked peer={} msg_count={}", peer_info->uid(),
+         msgList.size());
 
     for (int i = 0; i < msgList.size(); ++i)
     {
@@ -204,12 +211,11 @@ void ChatPage::on_send_btn_clicked()
 
         if (type == QStringLiteral("file"))
         {
-            // V1 暂不支持普通文件发送
+            LOGW(LogModule::Ui, "on_send_btn_clicked file type not supported yet");
             continue;
         }
     }
 
-    // 发送剩余文本消息
     if (!text_array.isEmpty())
     {
         text_obj["text_array"] = text_array;
@@ -217,10 +223,11 @@ void ChatPage::on_send_btn_clicked()
         text_obj["touid"] = peer_info->uid();
         QJsonDocument doc(text_obj);
         QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        LOGI(LogModule::Ui, "sending text chat msg peer={} count={}", peer_info->uid(),
+             text_array.size());
         emit TcpMgr::getInstance().sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, json_data);
     }
 
-    // 批量上传并发送图片消息
     if (!image_paths.isEmpty())
     {
         sendImageBatch(image_paths);
@@ -231,12 +238,13 @@ void ChatPage::sendImageBatch(const QVector<QString> &local_paths)
 {
     if (_uploading_images)
     {
-        // V1 简单处理：如果当前有上传任务，追加到待处理队列
         _pending_image_paths.append(local_paths);
+        LOGI(LogModule::Ui, "sendImageBatch appended to pending count={}", local_paths.size());
         return;
     }
     _pending_image_paths = local_paths;
     _uploading_images = true;
+    LOGI(LogModule::Ui, "sendImageBatch start count={}", local_paths.size());
     TcpMgr::getInstance().requestFileServer(UserMgr::getInstance().getUid());
 }
 
@@ -244,6 +252,7 @@ void ChatPage::onFileTransferRsp(int err, QString host, QString port, QString to
 {
     if (err != ErrorCodes::SUCCESS)
     {
+        LOGE(LogModule::Ui, "onFileTransferRsp error={}", err);
         _uploading_images = false;
         _pending_image_paths.clear();
         return;
@@ -253,6 +262,8 @@ void ChatPage::onFileTransferRsp(int err, QString host, QString port, QString to
         _uploading_images = false;
         return;
     }
+    LOGI(LogModule::Ui, "onFileTransferRsp host={}:{} token_len={}", host.toStdString(),
+         port.toStdString(), token.length());
     HttpMgr::getInstance().uploadImages(host, port, UserMgr::getInstance().getUid(), token,
                                         _pending_image_paths);
 }
@@ -263,6 +274,7 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
     auto self_info = UserMgr::getInstance().getSelfProfile();
     if (!self_info || !_peer)
     {
+        LOGE(LogModule::Ui, "onImageUploadFinished no self or peer");
         _uploading_images = false;
         _pending_image_paths.clear();
         return;
@@ -270,10 +282,14 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
 
     if (err != ErrorCodes::SUCCESS || results.isEmpty())
     {
+        LOGE(LogModule::Ui, "onImageUploadFinished error={} results={}", static_cast<int>(err),
+             results.size());
         _uploading_images = false;
         _pending_image_paths.clear();
         return;
     }
+
+    LOGI(LogModule::Ui, "onImageUploadFinished success count={}", results.size());
 
     QJsonObject image_obj;
     QJsonArray image_array;
@@ -283,6 +299,8 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
         const QString url = result.second;
         if (url.isEmpty())
         {
+            LOGW(LogModule::Ui, "onImageUploadFinished empty url for path={}",
+                 local_path.toStdString());
             continue;
         }
         QUuid uuid = QUuid::createUuid();
@@ -297,7 +315,6 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
         obj["filename"] = QFileInfo(local_path).fileName();
         image_array.append(obj);
 
-        // 追加到本地消息记录
         auto img_msg = std::make_shared<TextChatData>(
             uuid_string, QString(), self_info->uid, _peer->uid(), ChatMsgType::Image, url);
         emit sig_append_send_chat_msg(img_msg);
@@ -310,10 +327,11 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
         image_obj["touid"] = _peer->uid();
         QJsonDocument doc(image_obj);
         QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        LOGI(LogModule::Ui, "sending image chat msg peer={} count={}", _peer->uid(),
+             image_array.size());
         emit TcpMgr::getInstance().sig_send_data(ReqId::ID_IMAGE_CHAT_MSG_REQ, json_data);
     }
 
-    // 通知服务器可以清理文件 token
     TcpMgr::getInstance().notifyFileTransferDone(self_info->uid);
 
     _uploading_images = false;
@@ -329,9 +347,12 @@ void ChatPage::onImageDownloadFinished(const QString &url, const QPixmap &pixmap
     }
     if (pixmap.isNull())
     {
+        LOGE(LogModule::Ui, "onImageDownloadFailed url={}", url.toStdString());
         _image_bubbles.erase(it);
         return;
     }
+    LOGI(LogModule::Ui, "onImageDownloadFinished url={} size={}x{}", url.toStdString(),
+         pixmap.width(), pixmap.height());
     for (PictureBubble *bubble : it.value())
     {
         if (bubble)
@@ -345,6 +366,8 @@ void ChatPage::onImageDownloadFinished(const QString &url, const QPixmap &pixmap
 void ChatPage::setFriendEntry(std::shared_ptr<FriendListEntry> peer)
 {
     _peer = std::move(peer);
+    LOGI(LogModule::Ui, "setFriendEntry uid={} name={}", _peer->uid(),
+         _peer->listDisplayName().toStdString());
     ui->title_label->setText(_peer->listDisplayName());
     ui->chat_data_list->removeAllItem();
     for (const auto &msg : _peer->chat_msgs)

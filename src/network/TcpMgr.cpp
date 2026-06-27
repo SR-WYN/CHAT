@@ -19,16 +19,52 @@
 #include <qtcpsocket.h>
 #include <QTimer>
 
+namespace
+{
+QString reqIdName(ReqId id)
+{
+    switch (id)
+    {
+    case ID_CHAT_LOGIN_RSP:
+        return QStringLiteral("ID_CHAT_LOGIN_RSP");
+    case ID_SEARCH_USER_RSP:
+        return QStringLiteral("ID_SEARCH_USER_RSP");
+    case ID_ADD_FRIEND_RSP:
+        return QStringLiteral("ID_ADD_FRIEND_RSP");
+    case ID_NOTIFY_ADDFRIEND_REQ:
+        return QStringLiteral("ID_NOTIFY_ADDFRIEND_REQ");
+    case ID_AUTH_FRIEND_RSP:
+        return QStringLiteral("ID_AUTH_FRIEND_RSP");
+    case ID_NOTIFY_AUTH_FRIEND_REQ:
+        return QStringLiteral("ID_NOTIFY_AUTH_FRIEND_REQ");
+    case ID_TEXT_CHAT_MSG_RSP:
+        return QStringLiteral("ID_TEXT_CHAT_MSG_RSP");
+    case ID_NOTIFY_TEXT_CHAT_MSG_REQ:
+        return QStringLiteral("ID_NOTIFY_TEXT_CHAT_MSG_REQ");
+    case ID_CHAT_HISTORY_RSP:
+        return QStringLiteral("ID_CHAT_HISTORY_RSP");
+    case ID_FILE_TRANSFER_RSP:
+        return QStringLiteral("ID_FILE_TRANSFER_RSP");
+    case ID_IMAGE_CHAT_MSG_RSP:
+        return QStringLiteral("ID_IMAGE_CHAT_MSG_RSP");
+    case ID_NOTIFY_IMAGE_CHAT_MSG_REQ:
+        return QStringLiteral("ID_NOTIFY_IMAGE_CHAT_MSG_REQ");
+    case ID_HEARTBEAT_PONG:
+        return QStringLiteral("ID_HEARTBEAT_PONG");
+    default:
+        return QStringLiteral("UNKNOWN");
+    }
+}
+} // namespace
+
 TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), _message_len(0)
 {
     QObject::connect(&_socket, &QTcpSocket::connected, [&]() {
-        Log::info(LogModule::Tcp, "connected to {}:{}", _host.toStdString(), _port);
+        LOGI(LogModule::Tcp, "connected to {}:{}", _host.toStdString(), _port);
         emit sig_con_success(true);
     });
 
     QObject::connect(&_socket, &QTcpSocket::readyRead, [&]() {
-        // 当有数据可读时，读取所有数据
-        // 读取所有数据并追加到缓冲区
         _buffer.append(_socket.readAll());
 
         QDataStream stream(&_buffer, QIODevice::ReadOnly);
@@ -36,46 +72,41 @@ TcpMgr::TcpMgr() : _host(""), _port(0), _b_recv_pending(false), _message_id(0), 
 
         while (true)
         {
-            // 先解析头部
             if (!_b_recv_pending)
             {
-                // 检查缓冲区的数据是否足够解析出消息头
                 if (_buffer.size() < static_cast<int>(sizeof(quint16) * 2))
                 {
                     return;
                 }
                 stream >> _message_id >> _message_len;
-
-                // 将buffer中前四个字节移除
                 _buffer = _buffer.mid(sizeof(quint16) * 2);
-
-                // 输出读取的数据
             }
 
-            // buffer剩余长度是否满足消息体长度，不满足则继续读取
             if (_buffer.size() < _message_len)
             {
                 _b_recv_pending = true;
                 return;
             }
             _b_recv_pending = false;
-            // 解析消息体
             QByteArray messageBody = _buffer.mid(0, _message_len);
             _buffer = _buffer.mid(_message_len);
+            LOGD(LogModule::Tcp, "recv msg_id={} name={} len={}", _message_id,
+                 reqIdName(static_cast<ReqId>(_message_id)).toStdString(), _message_len);
             handleMsg(ReqId(_message_id), _message_len, messageBody);
         }
     });
 
     QObject::connect(&_socket, &QTcpSocket::errorOccurred, this,
                      [this](QAbstractSocket::SocketError error) {
+                         LOGE(LogModule::Tcp, "socket error host={}:{} error={}",
+                              _host.toStdString(), _port, static_cast<int>(error));
                      });
 
-    // 处理连接断开
     QObject::connect(&_socket, &QTcpSocket::disconnected, [&]() {
+        LOGI(LogModule::Tcp, "disconnected from {}:{}", _host.toStdString(), _port);
         HeartBeatMgr::getInstance().stop();
     });
     QObject::connect(this, &TcpMgr::sig_send_data, this, &TcpMgr::slot_send_data);
-    // 注册消息
     initHandlers();
     HeartBeatMgr::getInstance().attachToTcpMgr(this);
     HeartBeatMgr::getInstance().registerHandlers(this);
@@ -89,16 +120,14 @@ TcpMgr::~TcpMgr()
 
 void TcpMgr::initHandlers()
 {
-    // 登录响应
     _handlers.insert(ID_CHAT_LOGIN_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(len);
-
-        // 将QByteArray转换成QDocument
         QJsonDocument jsondoc = QJsonDocument::fromJson(data);
 
-        // 检查转换是否成功
         if (jsondoc.isNull())
         {
+            LOGE(LogModule::Tcp, "ID_CHAT_LOGIN_RSP invalid json");
+            emit sig_login_failed(ErrorCodes::ERR_JSON);
             return;
         }
 
@@ -106,25 +135,28 @@ void TcpMgr::initHandlers()
 
         if (!json_obj.contains(QStringLiteral("error")))
         {
-            int err = ErrorCodes::ERR_JSON;
-            emit sig_login_failed(err);
+            LOGE(LogModule::Tcp, "ID_CHAT_LOGIN_RSP missing error field");
+            emit sig_login_failed(ErrorCodes::ERR_JSON);
             return;
         }
 
         int err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGE(LogModule::Tcp, "ID_CHAT_LOGIN_RSP error={}", err);
             emit sig_login_failed(err);
             return;
         }
         auto self = std::make_shared<SelfProfile>(UserProfile::fromUserJson(json_obj));
         UserMgr::getInstance().setSelfProfile(self);
+        LOGI(LogModule::Tcp, "ID_CHAT_LOGIN_RSP success uid={}", self->uid);
         if (json_obj.contains(QStringLiteral("token")))
         {
             const QString tok = json_obj[QStringLiteral("token")].toString();
             if (!tok.isEmpty())
             {
                 UserMgr::getInstance().setToken(tok);
+                LOGI(LogModule::Tcp, "ID_CHAT_LOGIN_RSP token set len={}", tok.length());
             }
         }
 
@@ -133,7 +165,6 @@ void TcpMgr::initHandlers()
             UserMgr::getInstance().appendApplyList(json_obj[QStringLiteral("apply_list")].toArray());
         }
 
-        // 获取好友列表
         if (json_obj.contains(QStringLiteral("friend_list")))
         {
             UserMgr::getInstance().appendFriendList(json_obj[QStringLiteral("friend_list")].toArray());
@@ -144,7 +175,6 @@ void TcpMgr::initHandlers()
         QTimer::singleShot(300, this, [this]() { requestAllFriendsChatHistory(); });
     });
 
-    // 搜索用户响应
     _handlers.insert(ID_SEARCH_USER_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
@@ -152,6 +182,7 @@ void TcpMgr::initHandlers()
         auto json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_SEARCH_USER_RSP invalid json");
             emit sig_user_search(nullptr);
             return;
         }
@@ -159,6 +190,7 @@ void TcpMgr::initHandlers()
         auto json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_SEARCH_USER_RSP missing error field");
             emit sig_user_search(nullptr);
             return;
         }
@@ -166,15 +198,17 @@ void TcpMgr::initHandlers()
         auto err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_SEARCH_USER_RSP error={}", err);
             emit sig_user_search(nullptr);
             return;
         }
 
         auto profile = std::make_shared<UserProfile>(UserProfile::fromUserJson(json_obj));
+        LOGI(LogModule::Tcp, "ID_SEARCH_USER_RSP found uid={} name={}", profile->uid,
+             profile->loginName.toStdString());
         emit sig_user_search(profile);
     });
 
-    // 添加好友响应
     _handlers.insert(ID_ADD_FRIEND_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
@@ -182,6 +216,7 @@ void TcpMgr::initHandlers()
         auto json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_ADD_FRIEND_RSP invalid json");
             emit sig_add_friend_failed(ErrorCodes::ERR_JSON);
             return;
         }
@@ -189,6 +224,7 @@ void TcpMgr::initHandlers()
         auto json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_ADD_FRIEND_RSP missing error field");
             emit sig_add_friend_failed(ErrorCodes::ERR_JSON);
             return;
         }
@@ -196,12 +232,13 @@ void TcpMgr::initHandlers()
         auto err = json_obj["error"].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
-            emit sig_add_friend_failed(ErrorCodes::ERR_JSON);
+            LOGW(LogModule::Tcp, "ID_ADD_FRIEND_RSP error={}", err);
+            emit sig_add_friend_failed(err);
             return;
         }
+        LOGI(LogModule::Tcp, "ID_ADD_FRIEND_RSP success");
     });
 
-    // 通知添加好友响应
     _handlers.insert(ID_NOTIFY_ADDFRIEND_REQ, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
@@ -209,117 +246,133 @@ void TcpMgr::initHandlers()
         auto json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_ADDFRIEND_REQ invalid json");
             return;
         }
 
         auto json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_ADDFRIEND_REQ missing error field");
             return;
         }
 
         auto err = json_obj["error"].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_NOTIFY_ADDFRIEND_REQ error={}", err);
             return;
         }
 
-        emit sig_friend_apply(FriendApplyNotify::fromNotifyJson(json_obj));
-
+        auto notify = FriendApplyNotify::fromNotifyJson(json_obj);
+        LOGI(LogModule::Tcp, "ID_NOTIFY_ADDFRIEND_REQ from uid={}", notify->applicant.uid);
+        emit sig_friend_apply(notify);
     });
 
-    // 认证好友响应
     _handlers.insert(ID_AUTH_FRIEND_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         auto json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_AUTH_FRIEND_RSP invalid json");
             return;
         }
         auto json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_AUTH_FRIEND_RSP missing error field");
             return;
         }
         auto err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_AUTH_FRIEND_RSP error={}", err);
             return;
         }
-        emit sig_auth_rsp(AuthAcceptedPeer::fromAuthJson(json_obj));
+        auto peer = AuthAcceptedPeer::fromAuthJson(json_obj);
+        LOGI(LogModule::Tcp, "ID_AUTH_FRIEND_RSP accepted uid={}", peer->profile.uid);
+        emit sig_auth_rsp(peer);
     });
 
-    // 通知认证好友响应
     _handlers.insert(ID_NOTIFY_AUTH_FRIEND_REQ, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         auto json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_AUTH_FRIEND_REQ invalid json");
             return;
         }
         auto json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_AUTH_FRIEND_REQ missing error field");
             return;
         }
         auto err = json_obj[QStringLiteral("error")].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_NOTIFY_AUTH_FRIEND_REQ error={}", err);
             return;
         }
-
-        emit sig_add_auth_friend(AuthAcceptedPeer::fromAuthJson(json_obj));
-
+        auto peer = AuthAcceptedPeer::fromAuthJson(json_obj);
+        LOGI(LogModule::Tcp, "ID_NOTIFY_AUTH_FRIEND_REQ from uid={}", peer->profile.uid);
+        emit sig_add_auth_friend(peer);
     });
 
-    // 通知文本聊天
     _handlers.insert(ID_TEXT_CHAT_MSG_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         QJsonDocument json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull())
         {
+            LOGE(LogModule::Tcp, "ID_TEXT_CHAT_MSG_RSP invalid json");
             return;
         }
 
         QJsonObject json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
-            int err = ErrorCodes::ERR_JSON;
+            LOGE(LogModule::Tcp, "ID_TEXT_CHAT_MSG_RSP missing error field");
             return;
         }
 
         int err = json_obj["error"].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_TEXT_CHAT_MSG_RSP error={}", err);
             return;
         }
+        LOGI(LogModule::Tcp, "ID_TEXT_CHAT_MSG_RSP success");
     });
 
-    // 通知文本聊天响应
     _handlers.insert(ID_NOTIFY_TEXT_CHAT_MSG_REQ, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         QJsonDocument json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull())
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_TEXT_CHAT_MSG_REQ invalid json");
+            return;
         }
         QJsonObject json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
-            int err = ErrorCodes::ERR_JSON;
+            LOGE(LogModule::Tcp, "ID_NOTIFY_TEXT_CHAT_MSG_REQ missing error field");
             return;
         }
         auto err = json_obj["error"].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_NOTIFY_TEXT_CHAT_MSG_REQ error={}", err);
             return;
         }
         auto msg_ptr =
             std::make_shared<TextChatMsg>(json_obj["fromuid"].toInt(), json_obj["touid"].toInt(),
                                           json_obj["text_array"].toArray());
+        LOGI(LogModule::Tcp, "ID_NOTIFY_TEXT_CHAT_MSG_REQ from={} to={} count={}",
+             msg_ptr->_from_uid, msg_ptr->_to_uid, static_cast<int>(msg_ptr->_chat_msgs.size()));
         UserMgr::getInstance().appendFriendChatMsg(msg_ptr->_from_uid, msg_ptr->_chat_msgs);
         emit sig_text_chat_msg(msg_ptr);
     });
@@ -330,20 +383,25 @@ void TcpMgr::initHandlers()
         QJsonDocument json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_CHAT_HISTORY_RSP invalid json");
             return;
         }
         const QJsonObject json_obj = json_doc.object();
         if (!json_obj.contains(QStringLiteral("error")))
         {
+            LOGE(LogModule::Tcp, "ID_CHAT_HISTORY_RSP missing error field");
             return;
         }
         if (json_obj[QStringLiteral("error")].toInt() != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_CHAT_HISTORY_RSP error={}",
+                 json_obj[QStringLiteral("error")].toInt());
             return;
         }
         if (!json_obj.contains(QStringLiteral("peer_uid")) ||
             !json_obj.contains(QStringLiteral("text_array")))
         {
+            LOGE(LogModule::Tcp, "ID_CHAT_HISTORY_RSP missing peer_uid/text_array");
             return;
         }
         const int peer_uid = json_obj[QStringLiteral("peer_uid")].toInt();
@@ -363,74 +421,86 @@ void TcpMgr::initHandlers()
                 msgid, content, fromuid, touid,
                 msg_type == 1 ? ChatMsgType::Image : ChatMsgType::Text, url));
         }
+        LOGI(LogModule::Tcp, "ID_CHAT_HISTORY_RSP peer={} count={}", peer_uid,
+             static_cast<int>(msgs.size()));
         UserMgr::getInstance().mergeFriendChatHistory(peer_uid, msgs);
         emit sig_chat_history(peer_uid, msgs);
     });
 
-    // 文件服务器地址响应
     _handlers.insert(ID_FILE_TRANSFER_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         QJsonDocument json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_FILE_TRANSFER_RSP invalid json");
             emit sig_file_transfer_rsp(ErrorCodes::ERR_JSON, QString(), QString(), QString());
             return;
         }
         QJsonObject json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_FILE_TRANSFER_RSP missing error field");
             emit sig_file_transfer_rsp(ErrorCodes::ERR_JSON, QString(), QString(), QString());
             return;
         }
         int err = json_obj["error"].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_FILE_TRANSFER_RSP error={}", err);
             emit sig_file_transfer_rsp(err, QString(), QString(), QString());
             return;
         }
+        LOGI(LogModule::Tcp, "ID_FILE_TRANSFER_RSP host={}:{}",
+             json_obj["host"].toString().toStdString(), json_obj["port"].toString().toStdString());
         emit sig_file_transfer_rsp(err, json_obj["host"].toString(), json_obj["port"].toString(),
                                    json_obj["token"].toString());
     });
 
-    // 图片聊天消息响应
     _handlers.insert(ID_IMAGE_CHAT_MSG_RSP, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         QJsonDocument json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_IMAGE_CHAT_MSG_RSP invalid json");
             return;
         }
         QJsonObject json_obj = json_doc.object();
         if (!json_obj.contains("error") || json_obj["error"].toInt() != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_IMAGE_CHAT_MSG_RSP error={}", json_obj["error"].toInt());
             return;
         }
+        LOGI(LogModule::Tcp, "ID_IMAGE_CHAT_MSG_RSP success");
     });
 
-    // 通知图片聊天消息
     _handlers.insert(ID_NOTIFY_IMAGE_CHAT_MSG_REQ, [this](ReqId id, int len, QByteArray data) {
         Q_UNUSED(id);
         Q_UNUSED(len);
         QJsonDocument json_doc = QJsonDocument::fromJson(data);
         if (json_doc.isNull() || !json_doc.isObject())
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_IMAGE_CHAT_MSG_REQ invalid json");
             return;
         }
         QJsonObject json_obj = json_doc.object();
         if (!json_obj.contains("error"))
         {
+            LOGE(LogModule::Tcp, "ID_NOTIFY_IMAGE_CHAT_MSG_REQ missing error field");
             return;
         }
         int err = json_obj["error"].toInt();
         if (err != ErrorCodes::SUCCESS)
         {
+            LOGW(LogModule::Tcp, "ID_NOTIFY_IMAGE_CHAT_MSG_REQ error={}", err);
             return;
         }
         auto msg_ptr = std::make_shared<ImageChatMsg>(json_obj["fromuid"].toInt(),
                                                       json_obj["touid"].toInt(),
                                                       json_obj["image_array"].toArray());
+        LOGI(LogModule::Tcp, "ID_NOTIFY_IMAGE_CHAT_MSG_REQ from={} to={} count={}",
+             msg_ptr->_from_uid, msg_ptr->_to_uid, static_cast<int>(msg_ptr->_chat_msgs.size()));
         for (const auto& img : msg_ptr->_chat_msgs)
         {
             UserMgr::getInstance().appendFriendChatMsg(
@@ -451,12 +521,16 @@ void TcpMgr::requestChatHistory(int peer_uid, qint64 before_id, int limit)
     obj[QStringLiteral("before_id")] = before_id;
     obj[QStringLiteral("limit")] = limit;
     const QByteArray json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    LOGI(LogModule::Tcp, "requestChatHistory peer={} before_id={} limit={}", peer_uid, before_id,
+         limit);
     slot_send_data(ID_CHAT_HISTORY_REQ, QString::fromUtf8(json_data));
 }
 
 void TcpMgr::requestAllFriendsChatHistory()
 {
-    for (const int peer_uid : UserMgr::getInstance().getAllFriendUids())
+    const auto uids = UserMgr::getInstance().getAllFriendUids();
+    LOGI(LogModule::Tcp, "requestAllFriendsChatHistory count={}", static_cast<int>(uids.size()));
+    for (const int peer_uid : uids)
     {
         requestChatHistory(peer_uid, 0, 100);
     }
@@ -467,6 +541,7 @@ void TcpMgr::requestFileServer(int uid)
     QJsonObject obj;
     obj[QStringLiteral("uid")] = uid;
     const QByteArray json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    LOGI(LogModule::Tcp, "requestFileServer uid={}", uid);
     slot_send_data(ID_FILE_TRANSFER_REQ, QString::fromUtf8(json_data));
 }
 
@@ -475,6 +550,7 @@ void TcpMgr::notifyFileTransferDone(int uid)
     QJsonObject obj;
     obj[QStringLiteral("uid")] = uid;
     const QByteArray json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    LOGI(LogModule::Tcp, "notifyFileTransferDone uid={}", uid);
     slot_send_data(ID_FILE_TRANSFER_DONE, QString::fromUtf8(json_data));
 }
 
@@ -483,6 +559,8 @@ void TcpMgr::handleMsg(ReqId id, int len, QByteArray data)
     auto find_iter = _handlers.find(id);
     if (find_iter == _handlers.end())
     {
+        LOGW(LogModule::Tcp, "handleMsg no handler msg_id={} name={}", static_cast<int>(id),
+             reqIdName(id).toStdString());
         return;
     }
 
@@ -491,20 +569,23 @@ void TcpMgr::handleMsg(ReqId id, int len, QByteArray data)
 
 void TcpMgr::registerHandler(ReqId id, std::function<void(ReqId id, int len, QByteArray data)> handler)
 {
+    LOGD(LogModule::Tcp, "registerHandler msg_id={} name={}", static_cast<int>(id),
+         reqIdName(id).toStdString());
     _handlers.insert(id, std::move(handler));
 }
 
 void TcpMgr::slot_tcp_connect(ServerInfo si)
 {
     HeartBeatMgr::getInstance().stop();
-    // 尝试连接到服务器
     _host = si.host;
     _port = static_cast<uint16_t>(si.port.toInt());
+    LOGI(LogModule::Tcp, "connecting to {}:{}", _host.toStdString(), _port);
     _socket.connectToHost(_host, _port);
 }
 
 void TcpMgr::slot_heartbeat_abort()
 {
+    LOGI(LogModule::Tcp, "heartbeat abort");
     if (_socket.state() != QAbstractSocket::UnconnectedState)
     {
         _socket.abort();
@@ -515,21 +596,14 @@ bool TcpMgr::slot_send_data(ReqId reqId, QString data)
 {
     uint16_t msg_id = reqId;
     QByteArray data_Bytes = data.toUtf8();
-    // 计算长度（使用网络字节序转换）
     quint16 len = static_cast<quint16>(data_Bytes.size());
-    // 创建一个QByteArray用于存储要发送的所有数据
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
-
-    // 设置数据流使用网络字节序
     out.setByteOrder(QDataStream::BigEndian);
-
-    // 写入消息ID和长度
-    // id和长度使用网络字节序，所以不直接写入，而是使用QDataStream
     out << msg_id << len;
-    // 添加字符串数据
     block.append(data_Bytes);
-    // 发送数据
+    LOGD(LogModule::Tcp, "send msg_id={} name={} len={}", msg_id,
+         reqIdName(static_cast<ReqId>(reqId)).toStdString(), len);
     _socket.write(block);
     return true;
 }

@@ -2,6 +2,8 @@
 #include "AnimatedStateWidget.h"
 #include "ConfigMgr.h"
 #include "HttpMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include "TimerBtn.h"
 #include "global.h"
 #include <QJsonDocument>
@@ -117,7 +119,7 @@ void RegisterDialog::slot_get_code_btn_clicked()
     bool match = regex.match(email).hasMatch();
     if (match)
     {
-        // 发送http验证码
+        LOGI(LogModule::Ui, "register get verify code email={}", email.toStdString());
         QJsonObject json_obj;
         json_obj["email"] = email;
         HttpMgr::getInstance().postHttpReq(
@@ -126,6 +128,7 @@ void RegisterDialog::slot_get_code_btn_clicked()
     }
     else
     {
+        LOGW(LogModule::Ui, "register invalid email={}", email.toStdString());
         showTip(tr("邮箱地址不正确"), false);
     }
 }
@@ -148,48 +151,52 @@ void RegisterDialog::slot_reg_mod_finish(ReqId id, QString res, ErrorCodes err)
 {
     if (err != ErrorCodes::SUCCESS)
     {
+        LOGE(LogModule::Ui, "register network error req_id={} err={}", static_cast<int>(id),
+             static_cast<int>(err));
         showTip(tr("网络请求错误"), false);
         return;
     }
-    // 解析json字符串，res转化为QByteArray
     QJsonDocument jsonDoc = QJsonDocument::fromJson(res.toUtf8());
     if (jsonDoc.isNull())
     {
+        LOGE(LogModule::Ui, "register response json parse failed: {}", res.toStdString());
         showTip(tr("json解析失败"), false);
         return;
     }
-    // json 解析错误;
     if (!jsonDoc.isObject())
     {
+        LOGE(LogModule::Ui, "register response is not object: {}", res.toStdString());
         showTip(tr("json解析失败"), false);
         return;
     }
 
     _handlers[id](jsonDoc.object());
-    return;
 }
 
 void RegisterDialog::initHttpHandlers()
 {
-    // 注册获取验证码回包的逻辑
     _handlers.insert(ReqId::ID_GET_VERIFY_CODE, [this](const QJsonObject &jsonObj) {
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
         {
+            LOGE(LogModule::Ui, "get verify code failed error={}", error);
             showTip(tr("参数错误"), false);
             return;
         }
         auto email = jsonObj["email"].toString();
+        LOGI(LogModule::Ui, "get verify code success email={}", email.toStdString());
         showTip(tr("验证码已经发送到邮箱,注意查收"), true);
     });
     _handlers.insert(ReqId::ID_REG_USER, [this](QJsonObject jsonObj) {
         int error = jsonObj["error"].toInt();
         if (error != ErrorCodes::SUCCESS)
         {
+            LOGE(LogModule::Ui, "register failed error={}", error);
             showTip(tr("参数错误"), false);
             return;
         }
         auto email = jsonObj["email"].toString();
+        LOGI(LogModule::Ui, "register success email={}", email.toStdString());
         showTip(tr("用户注册成功"), true);
         changeTipPage();
     });
@@ -234,7 +241,7 @@ void RegisterDialog::slot_confirm_btn_clicked()
         return;
     }
 
-    // 发送http请求注册用户
+    LOGI(LogModule::Ui, "register confirm email={}", _ui->email_edit->text().toStdString());
     QJsonObject json_obj;
     json_obj["user"] = _ui->user_edit->text();
     json_obj["email"] = _ui->email_edit->text();
@@ -363,6 +370,7 @@ void RegisterDialog::delTipErr(TipErr te)
 
 void RegisterDialog::changeTipPage()
 {
+    LOGI(LogModule::Ui, "register change to success page");
     _countdown_timer->stop();
     _ui->stackedWidget->setCurrentWidget(_ui->page_2);
 
@@ -371,12 +379,14 @@ void RegisterDialog::changeTipPage()
 
 void RegisterDialog::slot_return_btn_clicked()
 {
+    LOGI(LogModule::Ui, "register return to login");
     _countdown_timer->stop();
     emit sig_register_switch_login();
 }
 
 void RegisterDialog::slot_cancel_btn_clicked()
 {
+    LOGI(LogModule::Ui, "register cancel");
     _countdown_timer->stop();
     emit sig_register_switch_login();
 }

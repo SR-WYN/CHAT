@@ -1,4 +1,6 @@
 #include "HttpMgr.h"
+#include "Log.h"
+#include "LogModule.h"
 #include <QFile>
 #include <QFileInfo>
 #include <QHttpMultiPart>
@@ -22,22 +24,25 @@ HttpMgr::HttpMgr()
 void HttpMgr::postHttpReq(QUrl url, QJsonObject json, ReqId req_id, Modules mod)
 {
     QByteArray data = QJsonDocument(json).toJson();
+    LOGI(LogModule::Http, "postHttpReq url={} req_id={} mod={} body_len={}",
+         url.toString().toStdString(), static_cast<int>(req_id), static_cast<int>(mod), data.size());
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(data.length()));
     QNetworkReply *reply = _manager.post(request, data);
     connect(reply, &QNetworkReply::finished, [this, reply, req_id, mod]() {
-        // 处理错误情况
         if (reply->error() != QNetworkReply::NoError)
         {
-            // 发送信号通知完成
+            LOGE(LogModule::Http, "postHttpReq failed req_id={} mod={} error={}",
+                 static_cast<int>(req_id), static_cast<int>(mod),
+                 reply->errorString().toStdString());
             emit this->sig_http_finish(req_id, "", ErrorCodes::ERR_NETWORK, mod);
             reply->deleteLater();
             return;
         }
-        // 无错误
         QString res = reply->readAll();
-        // 发送信号通知完成
+        LOGI(LogModule::Http, "postHttpReq finished req_id={} mod={} resp_len={}",
+             static_cast<int>(req_id), static_cast<int>(mod), res.size());
         emit this->sig_http_finish(req_id, res, ErrorCodes::SUCCESS, mod);
         reply->deleteLater();
         return;
@@ -55,6 +60,9 @@ void HttpMgr::uploadImages(const QString& host, const QString& port, int uid, co
     _image_upload_results.clear();
     _image_upload_results.reserve(paths.size());
 
+    LOGI(LogModule::Http, "uploadImages start uid={} count={} host={}:{}", uid, paths.size(),
+         host.toStdString(), port.toStdString());
+
     if (_pending_image_paths.isEmpty())
     {
         emit sig_upload_images_finished(_image_upload_results, ErrorCodes::SUCCESS);
@@ -68,6 +76,7 @@ void HttpMgr::startNextImageUpload()
 {
     if (_pending_image_paths.isEmpty())
     {
+        LOGI(LogModule::Http, "uploadImages all done count={}", _image_upload_results.size());
         emit sig_upload_images_finished(_image_upload_results, ErrorCodes::SUCCESS);
         return;
     }
@@ -76,6 +85,7 @@ void HttpMgr::startNextImageUpload()
     QFileInfo file_info(local_path);
     if (!file_info.exists())
     {
+        LOGW(LogModule::Http, "uploadImages file not found path={}", local_path.toStdString());
         _image_upload_results.append(qMakePair(local_path, QString()));
         startNextImageUpload();
         return;
@@ -84,11 +94,15 @@ void HttpMgr::startNextImageUpload()
     QFile* file = new QFile(local_path);
     if (!file->open(QIODevice::ReadOnly))
     {
+        LOGW(LogModule::Http, "uploadImages open failed path={}", local_path.toStdString());
         file->deleteLater();
         _image_upload_results.append(qMakePair(local_path, QString()));
         startNextImageUpload();
         return;
     }
+
+    LOGI(LogModule::Http, "uploadImages uploading path={} size={}", local_path.toStdString(),
+         file_info.size());
 
     QHttpMultiPart* multi_part = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     QHttpPart file_part;
@@ -128,6 +142,8 @@ void HttpMgr::onImageUploadFinished()
 
     if (reply->error() != QNetworkReply::NoError)
     {
+        LOGE(LogModule::Http, "onImageUploadFinished network error path={} error={}",
+             local_path.toStdString(), reply->errorString().toStdString());
         err = ErrorCodes::ERR_NETWORK;
     }
     else
@@ -136,6 +152,8 @@ void HttpMgr::onImageUploadFinished()
         QJsonDocument doc = QJsonDocument::fromJson(data);
         if (!doc.isObject())
         {
+            LOGE(LogModule::Http, "onImageUploadFinished invalid json path={} body={}",
+                 local_path.toStdString(), data.toStdString());
             err = ErrorCodes::ERR_JSON;
         }
         else
@@ -144,10 +162,14 @@ void HttpMgr::onImageUploadFinished()
             if (obj["error"].toInt() != ErrorCodes::SUCCESS)
             {
                 err = static_cast<ErrorCodes>(obj["error"].toInt(ErrorCodes::ERR_NETWORK));
+                LOGE(LogModule::Http, "onImageUploadFinished server error path={} error={}",
+                     local_path.toStdString(), static_cast<int>(err));
             }
             else
             {
                 url = obj["url"].toString();
+                LOGI(LogModule::Http, "onImageUploadFinished success path={} url={}",
+                     local_path.toStdString(), url.toStdString());
             }
         }
     }
@@ -157,7 +179,6 @@ void HttpMgr::onImageUploadFinished()
 
     if (err != ErrorCodes::SUCCESS)
     {
-        // 任一上传失败即终止本次批量，返回已上传结果
         emit sig_upload_images_finished(_image_upload_results, err);
         return;
     }
@@ -169,10 +190,12 @@ void HttpMgr::downloadImage(const QString& url)
 {
     if (_image_cache.contains(url))
     {
+        LOGD(LogModule::Http, "downloadImage cache hit url={}", url.toStdString());
         emit sig_image_download_finished(url, _image_cache[url]);
         return;
     }
 
+    LOGI(LogModule::Http, "downloadImage url={}", url.toStdString());
     QNetworkRequest request{url};
     QNetworkReply* reply = _manager.get(request);
     connect(reply, &QNetworkReply::finished, this, &HttpMgr::onImageDownloadFinished);
@@ -201,7 +224,19 @@ void HttpMgr::onImageDownloadFinished()
         if (!pixmap.isNull())
         {
             _image_cache[url] = pixmap;
+            LOGI(LogModule::Http, "onImageDownloadFinished success url={} size={}x{}",
+                 url.toStdString(), pixmap.width(), pixmap.height());
         }
+        else
+        {
+            LOGE(LogModule::Http, "onImageDownloadFinished decode failed url={}",
+                 url.toStdString());
+        }
+    }
+    else
+    {
+        LOGE(LogModule::Http, "onImageDownloadFinished failed url={} error={}",
+             url.toStdString(), reply->errorString().toStdString());
     }
     reply->deleteLater();
     emit sig_image_download_finished(url, pixmap);
@@ -211,19 +246,16 @@ void HttpMgr::slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mo
 {
     if (mod == Modules::REGISTERMOD)
     {
-        // 发送信号通知指定模块http的响应结束了
         emit sig_reg_mod_finish(id, res, err);
     }
 
     if (mod == Modules::RESETMOD)
     {
-        // 发送信号通知指定模块http的响应结束了
         emit sig_reset_mod_finish(id, res, err);
     }
 
     if (mod == Modules::LOGINMOD)
     {
-        // 发送信号通知指定模块http的响应结束了
         emit sig_login_mod_finish(id, res, err);
     }
 }
