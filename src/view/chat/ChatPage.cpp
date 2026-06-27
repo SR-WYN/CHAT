@@ -1,7 +1,6 @@
 #include "ChatPage.h"
 #include "AnimatedStateWidget.h"
 #include "ChatItemBase.h"
-#include "HttpImageDownloadMgr.h"
 #include "HttpMgr.h"
 #include "MessageTextEdit.h"
 #include "PictureBubble.h"
@@ -57,8 +56,8 @@ ChatPage::ChatPage(QWidget *parent) : QWidget(parent), ui(new Ui::ChatPage)
             &ChatPage::onFileTransferRsp);
     connect(&HttpMgr::getInstance(), &HttpMgr::sig_upload_images_finished, this,
             &ChatPage::onImageUploadFinished);
-    connect(&HttpImageDownloadMgr::getInstance(), &HttpImageDownloadMgr::sig_image_download_finished,
-            this, &ChatPage::onImageDownloadFinished);
+    connect(&HttpMgr::getInstance(), &HttpMgr::sig_image_download_finished, this,
+            &ChatPage::onImageDownloadFinished);
 }
 
 ChatPage::~ChatPage()
@@ -135,7 +134,7 @@ PictureBubble *ChatPage::appendImageBubble(const QString &image_source, ChatRole
     if (!is_local)
     {
         _image_bubbles[image_source].append(pBubble);
-        HttpImageDownloadMgr::getInstance().downloadImage(image_source);
+        HttpMgr::getInstance().downloadImage(image_source);
     }
 
     return pBubble;

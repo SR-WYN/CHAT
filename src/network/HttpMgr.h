@@ -4,8 +4,10 @@
 #include "global.h"
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMap>
 #include <QNetworkAccessManager>
 #include <QObject>
+#include <QPixmap>
 #include <QString>
 #include <QUrl>
 #include <QVector>
@@ -32,6 +34,12 @@ public:
     void uploadImages(const QString& host, const QString& port, int uid, const QString& token,
                       const QVector<QString>& paths);
 
+    /// 异步下载图片。已下载过的 URL 直接返回缓存。
+    void downloadImage(const QString& url);
+
+    /// 预加载缓存中的图片
+    QPixmap cachedImage(const QString& url) const;
+
 private:
     friend class Singleton<HttpMgr>;
     HttpMgr();
@@ -48,9 +56,13 @@ private:
     QVector<QString> _pending_image_paths;
     QVector<ImageUploadResult> _image_upload_results;
 
+    // 图片下载缓存
+    QMap<QString, QPixmap> _image_cache;
+
 private slots:
     void slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mod);
     void onImageUploadFinished();
+    void onImageDownloadFinished();
 
 signals:
     void sig_http_finish(ReqId id, QString res, ErrorCodes err, Modules mod);
@@ -60,4 +72,7 @@ signals:
 
     /// 批量图片上传完成信号
     void sig_upload_images_finished(const QVector<ImageUploadResult>& results, ErrorCodes err);
+
+    /// 图片下载完成信号
+    void sig_image_download_finished(const QString& url, const QPixmap& pixmap);
 };

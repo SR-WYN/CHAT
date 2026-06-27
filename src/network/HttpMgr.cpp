@@ -165,6 +165,48 @@ void HttpMgr::onImageUploadFinished()
     startNextImageUpload();
 }
 
+void HttpMgr::downloadImage(const QString& url)
+{
+    if (_image_cache.contains(url))
+    {
+        emit sig_image_download_finished(url, _image_cache[url]);
+        return;
+    }
+
+    QNetworkRequest request{url};
+    QNetworkReply* reply = _manager.get(request);
+    connect(reply, &QNetworkReply::finished, this, &HttpMgr::onImageDownloadFinished);
+    reply->setProperty("image_url", url);
+}
+
+QPixmap HttpMgr::cachedImage(const QString& url) const
+{
+    auto it = _image_cache.find(url);
+    return it != _image_cache.end() ? it.value() : QPixmap();
+}
+
+void HttpMgr::onImageDownloadFinished()
+{
+    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply)
+    {
+        return;
+    }
+
+    const QString url = reply->property("image_url").toString();
+    QPixmap pixmap;
+    if (reply->error() == QNetworkReply::NoError)
+    {
+        pixmap.loadFromData(reply->readAll());
+        if (!pixmap.isNull())
+        {
+            _image_cache[url] = pixmap;
+        }
+    }
+    reply->deleteLater();
+    emit sig_image_download_finished(url, pixmap);
+}
+
 void HttpMgr::slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mod)
 {
     if (mod == Modules::REGISTERMOD)
