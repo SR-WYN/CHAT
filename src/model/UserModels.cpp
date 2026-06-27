@@ -132,7 +132,9 @@ void FriendListEntry::appendChatMsgs(const std::vector<std::shared_ptr<TextChatD
     }
     if (!text_vec.empty())
     {
-        lastMessage = text_vec.back()->_msg_content;
+        const auto &msg = text_vec.back();
+        lastMessage = msg->_msg_type == ChatMsgType::Image ? QStringLiteral("[图片]")
+                                                           : msg->_msg_content;
     }
 }
 
@@ -141,7 +143,9 @@ void FriendListEntry::setChatMsgs(const std::vector<std::shared_ptr<TextChatData
     chat_msgs = text_vec;
     if (!text_vec.empty())
     {
-        lastMessage = text_vec.back()->_msg_content;
+        const auto &msg = text_vec.back();
+        lastMessage = msg->_msg_type == ChatMsgType::Image ? QStringLiteral("[图片]")
+                                                           : msg->_msg_content;
     }
 }
 

@@ -26,6 +26,9 @@ public:
     QVector<MsgInfo> getMsgList();
 
     void insertFileFromUrl(const QStringList &urls);
+    void insertImages(const QString &url);
+    void insertTextFile(const QString &url);
+
 signals:
     void send();
 
@@ -35,8 +38,6 @@ protected:
     void keyPressEvent(QKeyEvent *e);
 
 private:
-    void insertImages(const QString &url);
-    void insertTextFile(const QString &url);
     bool canInsertFromMimeData(const QMimeData *source) const;
     void insertFromMimeData(const QMimeData *source);
 

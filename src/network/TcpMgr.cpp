@@ -357,10 +357,89 @@ void TcpMgr::initHandlers()
             const QString content = obj[QStringLiteral("content")].toString();
             const int fromuid = obj[QStringLiteral("fromuid")].toInt();
             const int touid = obj[QStringLiteral("touid")].toInt();
-            msgs.push_back(std::make_shared<TextChatData>(msgid, content, fromuid, touid));
+            const int msg_type = obj[QStringLiteral("msg_type")].toInt();
+            const QString url = obj[QStringLiteral("url")].toString();
+            msgs.push_back(std::make_shared<TextChatData>(
+                msgid, content, fromuid, touid,
+                msg_type == 1 ? ChatMsgType::Image : ChatMsgType::Text, url));
         }
         UserMgr::getInstance().mergeFriendChatHistory(peer_uid, msgs);
         emit sig_chat_history(peer_uid, msgs);
+    });
+
+    // 文件服务器地址响应
+    _handlers.insert(ID_FILE_TRANSFER_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            emit sig_file_transfer_rsp(ErrorCodes::ERR_JSON, QString(), QString(), QString());
+            return;
+        }
+        QJsonObject json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            emit sig_file_transfer_rsp(ErrorCodes::ERR_JSON, QString(), QString(), QString());
+            return;
+        }
+        int err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            emit sig_file_transfer_rsp(err, QString(), QString(), QString());
+            return;
+        }
+        emit sig_file_transfer_rsp(err, json_obj["host"].toString(), json_obj["port"].toString(),
+                                   json_obj["token"].toString());
+    });
+
+    // 图片聊天消息响应
+    _handlers.insert(ID_IMAGE_CHAT_MSG_RSP, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            return;
+        }
+        QJsonObject json_obj = json_doc.object();
+        if (!json_obj.contains("error") || json_obj["error"].toInt() != ErrorCodes::SUCCESS)
+        {
+            return;
+        }
+    });
+
+    // 通知图片聊天消息
+    _handlers.insert(ID_NOTIFY_IMAGE_CHAT_MSG_REQ, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        if (json_doc.isNull() || !json_doc.isObject())
+        {
+            return;
+        }
+        QJsonObject json_obj = json_doc.object();
+        if (!json_obj.contains("error"))
+        {
+            return;
+        }
+        int err = json_obj["error"].toInt();
+        if (err != ErrorCodes::SUCCESS)
+        {
+            return;
+        }
+        auto msg_ptr = std::make_shared<ImageChatMsg>(json_obj["fromuid"].toInt(),
+                                                      json_obj["touid"].toInt(),
+                                                      json_obj["image_array"].toArray());
+        for (const auto& img : msg_ptr->_chat_msgs)
+        {
+            UserMgr::getInstance().appendFriendChatMsg(
+                img->_from_uid,
+                {std::make_shared<TextChatData>(img->_msg_id, QString(), img->_from_uid,
+                                                 img->_to_uid, ChatMsgType::Image,
+                                                 img->_url)});
+        }
+        emit sig_image_chat_msg(msg_ptr);
     });
 }
 
@@ -381,6 +460,22 @@ void TcpMgr::requestAllFriendsChatHistory()
     {
         requestChatHistory(peer_uid, 0, 100);
     }
+}
+
+void TcpMgr::requestFileServer(int uid)
+{
+    QJsonObject obj;
+    obj[QStringLiteral("uid")] = uid;
+    const QByteArray json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    slot_send_data(ID_FILE_TRANSFER_REQ, QString::fromUtf8(json_data));
+}
+
+void TcpMgr::notifyFileTransferDone(int uid)
+{
+    QJsonObject obj;
+    obj[QStringLiteral("uid")] = uid;
+    const QByteArray json_data = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    slot_send_data(ID_FILE_TRANSFER_DONE, QString::fromUtf8(json_data));
 }
 
 void TcpMgr::handleMsg(ReqId id, int len, QByteArray data)

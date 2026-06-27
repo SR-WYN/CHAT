@@ -1,6 +1,7 @@
 #pragma once
 #include "SearchList.h"
 #include "Singleton.h"
+#include "UserData.h"
 #include <functional>
 #include <QByteArray>
 #include <QObject>
@@ -8,7 +9,7 @@
 #include <qobject.h>
 
 class TextChatMsg;
-struct TextChatData;
+struct ImageChatMsg;
 struct UserProfile;
 struct FriendApplyNotify;
 struct AuthAcceptedPeer;
@@ -45,6 +46,8 @@ public:
         std::function<void(ReqId id, int len, QByteArray data)> handler);
     void requestChatHistory(int peer_uid, qint64 before_id = 0, int limit = 100);
     void requestAllFriendsChatHistory();
+    void requestFileServer(int uid);
+    void notifyFileTransferDone(int uid);
 
 signals:
     void sig_con_success(bool bsuccess);
@@ -57,5 +60,7 @@ signals:
     void sig_auth_rsp(std::shared_ptr<AuthAcceptedPeer> peer);
     void sig_add_auth_friend(std::shared_ptr<AuthAcceptedPeer> peer);
     void sig_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
+    void sig_image_chat_msg(std::shared_ptr<ImageChatMsg> msg_ptr);
     void sig_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
+    void sig_file_transfer_rsp(int err, QString host, QString port, QString token);
 };

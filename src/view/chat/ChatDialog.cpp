@@ -110,6 +110,7 @@ ChatDialog::ChatDialog(QWidget *parent)
             &ChatDialog::slot_append_send_chat_msg);
 
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_text_chat_msg, this, &ChatDialog::slot_text_chat_msg);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_image_chat_msg, this, &ChatDialog::slot_image_chat_msg);
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_chat_history, this, &ChatDialog::slot_chat_history);
     refreshChatListFromMemory();
 
@@ -666,6 +667,35 @@ void ChatDialog::slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr)
     ui->chat_user_list->insertItem(0, item);
     ui->chat_user_list->setItemWidget(item, chat_user_widget);
     _chat_item_added.insert(msg_ptr->_from_uid, item);
+}
+
+void ChatDialog::slot_image_chat_msg(std::shared_ptr<ImageChatMsg> msg_ptr)
+{
+    const int peer_uid =
+        (msg_ptr->_from_uid == UserMgr::getInstance().getUid()) ? msg_ptr->_to_uid
+                                                                : msg_ptr->_from_uid;
+
+    // 刷新聊天列表项（更新最后消息）
+    auto find_iter = _chat_item_added.find(peer_uid);
+    if (find_iter != _chat_item_added.end())
+    {
+        refreshChatListItem(peer_uid);
+    }
+
+    // 如果当前不在与该好友的聊天页面，不显示气泡
+    if (_cur_chat_uid != peer_uid)
+    {
+        return;
+    }
+
+    // 直接在聊天页追加图片消息
+    for (const auto &img : msg_ptr->_chat_msgs)
+    {
+        auto chat_msg = std::make_shared<TextChatData>(
+            img->_msg_id, QString(), img->_from_uid, img->_to_uid, ChatMsgType::Image,
+            img->_url);
+        ui->chat_page->appendChatMsg(chat_msg);
+    }
 }
 
 void ChatDialog::updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec)

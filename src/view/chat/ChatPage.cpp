@@ -1,6 +1,8 @@
 #include "ChatPage.h"
 #include "AnimatedStateWidget.h"
 #include "ChatItemBase.h"
+#include "HttpImageDownloadMgr.h"
+#include "HttpUploadMgr.h"
 #include "MessageTextEdit.h"
 #include "PictureBubble.h"
 #include "TcpMgr.h"
@@ -10,11 +12,35 @@
 #include "UserModels.h"
 #include "global.h"
 #include "ui_ChatPage.h"
-#include <QPainter>
-#include <QStyleOption>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPainter>
+#include <QStyleOption>
+#include <QUuid>
+
+namespace
+{
+constexpr int kMaxImageWidth = 300;
+constexpr int kMaxImageHeight = 400;
+
+QPixmap loadImageScaled(const QString &path)
+{
+    QPixmap pix(path);
+    if (pix.isNull())
+    {
+        return pix;
+    }
+    if (pix.width() > kMaxImageWidth || pix.height() > kMaxImageHeight)
+    {
+        pix = pix.scaled(QSize(kMaxImageWidth, kMaxImageHeight), Qt::KeepAspectRatio,
+                         Qt::SmoothTransformation);
+    }
+    return pix;
+}
+} // namespace
 
 ChatPage::ChatPage(QWidget *parent) : QWidget(parent), ui(new Ui::ChatPage)
 {
@@ -24,6 +50,15 @@ ChatPage::ChatPage(QWidget *parent) : QWidget(parent), ui(new Ui::ChatPage)
     ui->file_label->setQssInteraction(AnimatedStateWidget::QssInteraction::Momentary);
     ui->emoji_label->setState("normal", "hover", "press", "normal", "hover", "press");
     ui->file_label->setState("normal", "hover", "press", "normal", "hover", "press");
+
+    connect(ui->file_label, &AnimatedStateWidget::clicked, this,
+            &ChatPage::onFileLabelClicked);
+    connect(&TcpMgr::getInstance(), &TcpMgr::sig_file_transfer_rsp, this,
+            &ChatPage::onFileTransferRsp);
+    connect(&HttpUploadMgr::getInstance(), &HttpUploadMgr::sig_upload_images_finished, this,
+            &ChatPage::onImageUploadFinished);
+    connect(&HttpImageDownloadMgr::getInstance(), &HttpImageDownloadMgr::sig_image_download_finished,
+            this, &ChatPage::onImageDownloadFinished);
 }
 
 ChatPage::~ChatPage()
@@ -40,6 +75,72 @@ void ChatPage::paintEvent(QPaintEvent *event)
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }
 
+void ChatPage::onFileLabelClicked()
+{
+    const QStringList filters = {QStringLiteral("Image Files (*.png *.jpg *.jpeg *.bmp *.gif *.webp)"),
+                                 QStringLiteral("All Files (*)")};
+    QStringList file_names = QFileDialog::getOpenFileNames(
+        this, QStringLiteral("选择图片"), QString(), filters.join(QStringLiteral(";;")));
+    for (const QString &file_name : file_names)
+    {
+        if (!file_name.isEmpty())
+        {
+            ui->chat_edit->insertImages(file_name);
+        }
+    }
+}
+
+PictureBubble *ChatPage::appendImageBubble(const QString &image_source, ChatRole role,
+                                           bool is_local)
+{
+    auto self_info = UserMgr::getInstance().getSelfProfile();
+    if (!self_info)
+    {
+        return nullptr;
+    }
+
+    QString userName = self_info->loginName;
+    QString userIcon = self_info->icon;
+    if (role == ChatRole::OTHER && _peer)
+    {
+        userName = _peer->listDisplayName();
+        userIcon = _peer->profile.icon;
+    }
+
+    ChatItemBase *pChatItem = new ChatItemBase(role);
+    pChatItem->setUserName(userName);
+    pChatItem->setUserIcon(QPixmap(userIcon));
+
+    QPixmap pix;
+    if (is_local)
+    {
+        pix = loadImageScaled(image_source);
+        if (pix.isNull())
+        {
+            delete pChatItem;
+            return nullptr;
+        }
+    }
+    else
+    {
+        // 网络图片先显示占位图，异步下载完成后更新
+        pix = QPixmap(kMaxImageWidth, kMaxImageHeight);
+        pix.fill(Qt::lightGray);
+    }
+
+    PictureBubble *pBubble = new PictureBubble(pix, role);
+    pChatItem->setWidget(pBubble);
+    ui->chat_data_list->appendChatItem(pChatItem);
+
+    if (!is_local)
+    {
+        _image_bubbles[image_source].append(pBubble);
+        HttpImageDownloadMgr::getInstance().downloadImage(image_source);
+    }
+
+    return pBubble;
+}
+
 void ChatPage::on_send_btn_clicked()
 {
     if (_peer == nullptr)
@@ -53,23 +154,22 @@ void ChatPage::on_send_btn_clicked()
     }
     auto peer_info = _peer;
     auto pTextEdit = ui->chat_edit;
-    ChatRole role = ChatRole::SELF;
-    QString userName = self_info->loginName;
-    QString userIcon = self_info->icon;
 
     const QVector<MsgInfo> &msgList = pTextEdit->getMsgList();
     QJsonObject text_obj;
     QJsonArray text_array;
     int text_size = 0;
+    QVector<QString> image_paths;
+
     for (int i = 0; i < msgList.size(); ++i)
     {
-        if (msgList[i].content.length() > 1024)
+        const QString type = msgList[i].msgFlag;
+        if (type == QStringLiteral("text"))
         {
-            continue;
-        }
-        QString type = msgList[i].msgFlag;
-        if (type == "text")
-        {
+            if (msgList[i].content.length() > 1024)
+            {
+                continue;
+            }
             QUuid uuid = QUuid::createUuid();
             QString uuid_string = uuid.toString();
             if (text_size + msgList[i].content.length() > 1024)
@@ -90,39 +190,157 @@ void ChatPage::on_send_btn_clicked()
             obj["content"] = QString::fromUtf8(utf8Message);
             obj["msgid"] = uuid_string;
             text_array.append(obj);
-            auto text_msg = std::make_shared<TextChatData>(uuid_string, obj["content"].toString(), self_info->uid,
-                                                          peer_info->uid());
+            auto text_msg = std::make_shared<TextChatData>(uuid_string, obj["content"].toString(),
+                                                           self_info->uid, peer_info->uid());
             emit sig_append_send_chat_msg(text_msg);
             continue;
         }
 
-        ChatItemBase *pChatItem = new ChatItemBase(role);
-        pChatItem->setUserName(userName);
-        pChatItem->setUserIcon(QPixmap(userIcon));
-        QWidget *pBubble = nullptr;
-        if (type == "image")
+        if (type == QStringLiteral("image"))
         {
-            pBubble = new PictureBubble(QPixmap(msgList[i].content), role);
-        }
-        else if (type == "file")
-        {
+            image_paths.append(msgList[i].content);
+            appendImageBubble(msgList[i].content, ChatRole::SELF);
+            continue;
         }
 
-        if (pBubble != nullptr)
+        if (type == QStringLiteral("file"))
         {
-            pChatItem->setWidget(pBubble);
-            ui->chat_data_list->appendChatItem(pChatItem);
+            // V1 暂不支持普通文件发送
+            continue;
         }
     }
-    text_obj["text_array"] = text_array;
-    text_obj["fromuid"] = self_info->uid;
-    text_obj["touid"] = peer_info->uid();
-    QJsonDocument doc(text_obj);
-    QByteArray json_data = doc.toJson(QJsonDocument::Compact);
-    text_size = 0;
-    text_array = QJsonArray();
-    text_obj = QJsonObject();
-    emit TcpMgr::getInstance().sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, json_data);
+
+    // 发送剩余文本消息
+    if (!text_array.isEmpty())
+    {
+        text_obj["text_array"] = text_array;
+        text_obj["fromuid"] = self_info->uid;
+        text_obj["touid"] = peer_info->uid();
+        QJsonDocument doc(text_obj);
+        QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        emit TcpMgr::getInstance().sig_send_data(ReqId::ID_TEXT_CHAT_MSG_REQ, json_data);
+    }
+
+    // 批量上传并发送图片消息
+    if (!image_paths.isEmpty())
+    {
+        sendImageBatch(image_paths);
+    }
+}
+
+void ChatPage::sendImageBatch(const QVector<QString> &local_paths)
+{
+    if (_uploading_images)
+    {
+        // V1 简单处理：如果当前有上传任务，追加到待处理队列
+        _pending_image_paths.append(local_paths);
+        return;
+    }
+    _pending_image_paths = local_paths;
+    _uploading_images = true;
+    TcpMgr::getInstance().requestFileServer(UserMgr::getInstance().getUid());
+}
+
+void ChatPage::onFileTransferRsp(int err, QString host, QString port, QString token)
+{
+    if (err != ErrorCodes::SUCCESS)
+    {
+        _uploading_images = false;
+        _pending_image_paths.clear();
+        return;
+    }
+    if (_pending_image_paths.isEmpty())
+    {
+        _uploading_images = false;
+        return;
+    }
+    HttpUploadMgr::getInstance().uploadImages(host, port, UserMgr::getInstance().getUid(),
+                                              token, _pending_image_paths);
+}
+
+void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &results,
+                                     ErrorCodes err)
+{
+    auto self_info = UserMgr::getInstance().getSelfProfile();
+    if (!self_info || !_peer)
+    {
+        _uploading_images = false;
+        _pending_image_paths.clear();
+        return;
+    }
+
+    if (err != ErrorCodes::SUCCESS || results.isEmpty())
+    {
+        _uploading_images = false;
+        _pending_image_paths.clear();
+        return;
+    }
+
+    QJsonObject image_obj;
+    QJsonArray image_array;
+    for (const auto &result : results)
+    {
+        const QString local_path = result.first;
+        const QString url = result.second;
+        if (url.isEmpty())
+        {
+            continue;
+        }
+        QUuid uuid = QUuid::createUuid();
+        QString uuid_string = uuid.toString();
+        QPixmap pix = loadImageScaled(local_path);
+        QJsonObject obj;
+        obj["msgid"] = uuid_string;
+        obj["url"] = url;
+        obj["width"] = pix.isNull() ? 0 : pix.width();
+        obj["height"] = pix.isNull() ? 0 : pix.height();
+        obj["size"] = QFileInfo(local_path).size();
+        obj["filename"] = QFileInfo(local_path).fileName();
+        image_array.append(obj);
+
+        // 追加到本地消息记录
+        auto img_msg = std::make_shared<TextChatData>(
+            uuid_string, QString(), self_info->uid, _peer->uid(), ChatMsgType::Image, url);
+        emit sig_append_send_chat_msg(img_msg);
+    }
+
+    if (!image_array.isEmpty())
+    {
+        image_obj["image_array"] = image_array;
+        image_obj["fromuid"] = self_info->uid;
+        image_obj["touid"] = _peer->uid();
+        QJsonDocument doc(image_obj);
+        QByteArray json_data = doc.toJson(QJsonDocument::Compact);
+        emit TcpMgr::getInstance().sig_send_data(ReqId::ID_IMAGE_CHAT_MSG_REQ, json_data);
+    }
+
+    // 通知服务器可以清理文件 token
+    TcpMgr::getInstance().notifyFileTransferDone(self_info->uid);
+
+    _uploading_images = false;
+    _pending_image_paths.clear();
+}
+
+void ChatPage::onImageDownloadFinished(const QString &url, const QPixmap &pixmap)
+{
+    auto it = _image_bubbles.find(url);
+    if (it == _image_bubbles.end())
+    {
+        return;
+    }
+    if (pixmap.isNull())
+    {
+        _image_bubbles.erase(it);
+        return;
+    }
+    for (PictureBubble *bubble : it.value())
+    {
+        if (bubble)
+        {
+            bubble->setImage(pixmap);
+        }
+    }
+    _image_bubbles.erase(it);
 }
 
 void ChatPage::setFriendEntry(std::shared_ptr<FriendListEntry> peer)
@@ -152,9 +370,24 @@ void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
         pChatItem->setUserName(self_info->loginName);
         pChatItem->setUserIcon(QPixmap(self_info->icon));
         QWidget *pBubble = nullptr;
-        pBubble = new TextBubble(role, msg->_msg_content);
-        pChatItem->setWidget(pBubble);
-        ui->chat_data_list->appendChatItem(pChatItem);
+        if (msg->_msg_type == ChatMsgType::Image)
+        {
+            const bool is_local = !msg->_url.startsWith(QStringLiteral("http"), Qt::CaseInsensitive);
+            appendImageBubble(msg->_url, role, is_local);
+        }
+        else
+        {
+            pBubble = new TextBubble(role, msg->_msg_content);
+        }
+        if (pBubble != nullptr)
+        {
+            pChatItem->setWidget(pBubble);
+            ui->chat_data_list->appendChatItem(pChatItem);
+        }
+        else
+        {
+            delete pChatItem;
+        }
     }
     else
     {
@@ -170,13 +403,29 @@ void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
         }
         if (showName.isEmpty())
         {
+            delete pChatItem;
             return;
         }
         pChatItem->setUserName(showName);
         pChatItem->setUserIcon(QPixmap(showIcon));
         QWidget *pBubble = nullptr;
-        pBubble = new TextBubble(role, msg->_msg_content);
-        pChatItem->setWidget(pBubble);
-        ui->chat_data_list->appendChatItem(pChatItem);
+        if (msg->_msg_type == ChatMsgType::Image)
+        {
+            const bool is_local = !msg->_url.startsWith(QStringLiteral("http"), Qt::CaseInsensitive);
+            appendImageBubble(msg->_url, role, is_local);
+        }
+        else
+        {
+            pBubble = new TextBubble(role, msg->_msg_content);
+        }
+        if (pBubble != nullptr)
+        {
+            pChatItem->setWidget(pBubble);
+            ui->chat_data_list->appendChatItem(pChatItem);
+        }
+        else
+        {
+            delete pChatItem;
+        }
     }
 }

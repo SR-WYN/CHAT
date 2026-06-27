@@ -17,8 +17,9 @@ struct FriendApplyNotify;
 struct AuthAcceptedPeer;
 struct UserProfile;
 struct FriendListEntry;
-struct TextChatData;
 struct TextChatMsg;
+struct ImageChatData;
+struct ImageChatMsg;
 
 class ChatDialog : public QDialog
 {
@@ -68,6 +69,7 @@ private slots:
     void slot_item_clicked(QListWidgetItem *item);
     void slot_append_send_chat_msg(std::shared_ptr<TextChatData> msg);
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
+    void slot_image_chat_msg(std::shared_ptr<ImageChatMsg> msg_ptr);
     void slot_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
     void requestChatHistory(int peer_uid);
     void slot_side_head_clicked();

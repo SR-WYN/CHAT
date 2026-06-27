@@ -1,17 +1,24 @@
 #include "PictureBubble.h"
 #include <QLabel>
 
-#define PIC_MAX_WIDTH 160
-#define PIC_MAX_HEIGHT 90
-
-PictureBubble::PictureBubble(const QPixmap &picture, ChatRole role, QWidget *parent)
-    : BubbleFrame(role, parent)
+PictureBubble::PictureBubble(const QPixmap &picture, ChatRole role, QWidget *parent,
+                             const QSize &max_size)
+    : BubbleFrame(role, parent), _max_size(max_size)
 {
-    QLabel *lb = new QLabel();
-    lb->setScaledContents(true);
-    QPixmap pix = picture.scaled(QSize(PIC_MAX_WIDTH, PIC_MAX_HEIGHT), Qt::KeepAspectRatio);
-    lb->setPixmap(pix);
-    this->setWidget(lb);
+    _image_label = new QLabel();
+    _image_label->setScaledContents(true);
+    setImage(picture);
+    this->setWidget(_image_label);
+}
+
+void PictureBubble::setImage(const QPixmap &picture)
+{
+    if (!_image_label)
+    {
+        return;
+    }
+    QPixmap pix = picture.scaled(_max_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    _image_label->setPixmap(pix);
 
     int left_margin = this->layout()->contentsMargins().left();
     int right_margin = this->layout()->contentsMargins().right();
