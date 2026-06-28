@@ -21,6 +21,15 @@ class HttpMgr : public QObject, public Singleton<HttpMgr>
     Q_OBJECT
 public:
     ~HttpMgr() override;
+    /// 设置下载图片的认证信息
+    /// @param host      FileServer 主机地址
+    /// @param port      FileServer HTTP 端口
+    /// @param uid       当前用户 ID（用于 X-Uid 头鉴权）
+    /// @param token     文件传输临时 token（Bearer 认证）
+    void setDownloadAuth(const QString& host,const QString& port,int uid,const QString& token);
+    
+    /// 清除下载图片的认证信息
+    void clearDownloadAuth();
 
     /// 原有 JSON POST 请求
     void postHttpReq(QUrl url, QJsonObject json, ReqId req_id, Modules mod);
@@ -58,6 +67,12 @@ private:
 
     // 图片下载缓存
     QMap<QString, QPixmap> _image_cache;
+
+    // 图片下载相关状态
+    QString _download_host;
+    QString _download_port;
+    int _download_uid = 0;
+    QString _download_token;
 
 private slots:
     void slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mod);

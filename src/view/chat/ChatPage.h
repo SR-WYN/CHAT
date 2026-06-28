@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QWidget>
 #include <memory>
+#include <QQueue>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -27,6 +28,9 @@ public:
     ~ChatPage() override;
     void setFriendEntry(std::shared_ptr<FriendListEntry> peer);
     void appendChatMsg(std::shared_ptr<TextChatData> msg);
+
+    // 对已入队的待下载 URL 发起下载（先请求 Token，再下载）
+    void startImageDownload();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -50,6 +54,9 @@ private:
 
     // 等待异步下载完成的图片气泡：URL -> bubble 列表
     QMap<QString, QList<PictureBubble *>> _image_bubbles;
+
+    // 等待异步下载的图片 URL 队列
+    QQueue<QString> _pending_download_urls;
 
 private slots:
     void on_send_btn_clicked();

@@ -137,10 +137,20 @@ PictureBubble *ChatPage::appendImageBubble(const QString &image_source, ChatRole
     if (!is_local)
     {
         _image_bubbles[image_source].append(pBubble);
-        HttpMgr::getInstance().downloadImage(image_source);
+        // 下载由 appendChatMsg 通过 startImageDownload 统一发起
     }
 
     return pBubble;
+}
+
+void ChatPage::startImageDownload()
+{
+    if (_pending_download_urls.isEmpty())
+    {
+        return;
+    }
+    LOGI(LogModule::Ui, "startImageDownload count={}", _pending_download_urls.size());
+    TcpMgr::getInstance().requestFileServer(UserMgr::getInstance().getUid());
 }
 
 void ChatPage::on_send_btn_clicked()
@@ -255,15 +265,32 @@ void ChatPage::onFileTransferRsp(int err, QString host, QString port, QString to
         LOGE(LogModule::Ui, "onFileTransferRsp error={}", err);
         _uploading_images = false;
         _pending_image_paths.clear();
+        _pending_download_urls.clear();
         return;
     }
+
+    // 下载场景优先
+    if (!_pending_download_urls.isEmpty())
+    {
+        LOGI(LogModule::Ui, "onFileTransferRsp download mode host={}:{} count={}",
+             host.toStdString(), port.toStdString(), _pending_download_urls.size());
+        HttpMgr::getInstance().setDownloadAuth(host, port, UserMgr::getInstance().getUid(), token);
+        while (!_pending_download_urls.isEmpty())
+        {
+            HttpMgr::getInstance().downloadImage(_pending_download_urls.dequeue());
+        }
+        TcpMgr::getInstance().notifyFileTransferDone(UserMgr::getInstance().getUid());
+        return;
+    }
+
+    // 上传场景
     if (_pending_image_paths.isEmpty())
     {
         _uploading_images = false;
         return;
     }
-    LOGI(LogModule::Ui, "onFileTransferRsp host={}:{} token_len={}", host.toStdString(),
-         port.toStdString(), token.length());
+    LOGI(LogModule::Ui, "onFileTransferRsp upload mode host={}:{} token_len={}",
+         host.toStdString(), port.toStdString(), token.length());
     HttpMgr::getInstance().uploadImages(host, port, UserMgr::getInstance().getUid(), token,
                                         _pending_image_paths);
 }
@@ -433,8 +460,8 @@ void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
         QWidget *pBubble = nullptr;
         if (msg->_msg_type == ChatMsgType::Image)
         {
-            const bool is_local = !msg->_url.startsWith(QStringLiteral("http"), Qt::CaseInsensitive);
-            appendImageBubble(msg->_url, role, is_local);
+            appendImageBubble(msg->_url, role, false);
+            _pending_download_urls.enqueue(msg->_url);
         }
         else
         {

@@ -195,8 +195,17 @@ void HttpMgr::downloadImage(const QString& url)
         return;
     }
 
+    if (_download_token.isEmpty())
+    {
+        LOGW(LogModule::Http, "downloadImage no auth,abort url = {}",url.toStdString());
+        emit sig_image_download_finished(url, QPixmap());
+        return;
+    }
     LOGI(LogModule::Http, "downloadImage url={}", url.toStdString());
     QNetworkRequest request{url};
+    request.setRawHeader("Authorization",
+                         QStringLiteral("Bearer %1").arg(_download_token).toUtf8());
+    request.setRawHeader("X-Uid", QString::number(_download_uid).toUtf8());
     QNetworkReply* reply = _manager.get(request);
     connect(reply, &QNetworkReply::finished, this, &HttpMgr::onImageDownloadFinished);
     reply->setProperty("image_url", url);
@@ -258,4 +267,23 @@ void HttpMgr::slot_http_finish(ReqId id, QString res, ErrorCodes err, Modules mo
     {
         emit sig_login_mod_finish(id, res, err);
     }
+}
+
+void HttpMgr::setDownloadAuth(const QString& host,const QString& port,int uid,const QString& token)
+{
+    _download_host = host;
+    _download_port = port;
+    _download_uid = uid;
+    _download_token = token;
+    LOGI(LogModule::Http, "setDownloadAuth host={} port={} uid={} token={}",
+         host.toStdString(), port.toStdString(), uid, token.toStdString());
+}
+
+void HttpMgr::clearDownloadAuth()
+{
+    _download_host.clear();
+    _download_port.clear();
+    _download_uid = 0;
+    _download_token.clear();
+    LOGI(LogModule::Http, "clearDownloadAuth");
 }

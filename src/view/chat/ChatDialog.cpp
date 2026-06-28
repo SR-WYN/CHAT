@@ -725,6 +725,8 @@ void ChatDialog::slot_image_chat_msg(std::shared_ptr<ImageChatMsg> msg_ptr)
             img->_url);
         ui->chat_page->appendChatMsg(chat_msg);
     }
+    // 所有图片消息已入队，发起 Token 请求 + 下载
+    ui->chat_page->startImageDownload();
 }
 
 void ChatDialog::updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
