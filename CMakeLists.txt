@@ -111,6 +111,13 @@ qt_add_executable(CHAT
     resources.qrc
 )
 
+# 固定可执行文件输出到 build 根目录，与服务器保持一致
+set_target_properties(CHAT PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}"
+)
+
 # --- 7. 后置处理 (配置文件与静态资源) ---
 # 使用更现代的 POST_BUILD 方式
 add_custom_command(TARGET CHAT POST_BUILD
