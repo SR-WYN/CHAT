@@ -63,7 +63,7 @@ void LoginDialog::initHttpHandlers()
             case ErrorCodes::ERROR_JSON:
                 tip = tr("请求参数错误");
                 break;
-            case ErrorCodes::RPCFAILED:
+            case ErrorCodes::RPC_FAILED:
                 tip = tr("服务暂时不可用，请稍后重试");
                 break;
             default:

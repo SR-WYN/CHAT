@@ -104,6 +104,8 @@ set(CPP_SOURCES
 )
 
 # --- 6. 构建目标 ---
+add_subdirectory(src/common)
+
 qt_add_executable(CHAT
     ${CPP_SOURCES}
     ${UI_FILES}
@@ -143,6 +145,7 @@ target_include_directories(CHAT PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/common/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core
     ${CMAKE_CURRENT_SOURCE_DIR}/src/model
     ${CMAKE_CURRENT_SOURCE_DIR}/src/network
@@ -160,6 +163,7 @@ target_include_directories(CHAT PRIVATE
 
 target_link_libraries(CHAT
     PRIVATE
+    common
     Qt6::Widgets
     Qt6::Network
     Qt6::Core
