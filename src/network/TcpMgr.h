@@ -54,6 +54,7 @@ signals:
     void sig_send_data(ReqId, QString data);
     void sig_switch_chatdlg();
     void sig_login_failed(int);
+    void sig_kicked_by_other(QString reason);
     void sig_user_search(std::shared_ptr<UserProfile> profile);
     void sig_add_friend_failed(int err);
     void sig_friend_apply(std::shared_ptr<FriendApplyNotify> apply_info);

@@ -31,6 +31,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
             &MainWindow::slot_login_dlg_switch_reset);
     connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_switch_chatdlg, this,
             &MainWindow::slot_chat_dlg_switch_chat);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_kicked_by_other, this,
+            &MainWindow::slot_self_info_switch_login, Qt::QueuedConnection);
     connect(&HeartBeatMgr::getInstance(), &HeartBeatMgr::sig_heartbeat_timeout, this,
             &MainWindow::slot_heartbeat_timeout_back_to_login, Qt::QueuedConnection);
 }

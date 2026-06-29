@@ -49,6 +49,8 @@ QString reqIdName(ReqId id)
         return QStringLiteral("ID_IMAGE_CHAT_MSG_RSP");
     case ID_NOTIFY_IMAGE_CHAT_MSG_REQ:
         return QStringLiteral("ID_NOTIFY_IMAGE_CHAT_MSG_REQ");
+    case ID_KICK_NOTIFY:
+        return QStringLiteral("ID_KICK_NOTIFY");
     case ID_HEARTBEAT_PONG:
         return QStringLiteral("ID_HEARTBEAT_PONG");
     default:
@@ -511,6 +513,32 @@ void TcpMgr::initHandlers()
         }
         emit sig_image_chat_msg(msg_ptr);
     });
+
+    _handlers.insert(ID_KICK_NOTIFY, [this](ReqId id, int len, QByteArray data) {
+        Q_UNUSED(id);
+        Q_UNUSED(len);
+        QJsonDocument json_doc = QJsonDocument::fromJson(data);
+        QJsonObject json_obj;
+        if (!json_doc.isNull() && json_doc.isObject())
+        {
+            json_obj = json_doc.object();
+        }
+
+        QString reason = json_obj.contains("reason") ? json_obj["reason"].toString()
+                                                       : QStringLiteral("kicked_by_new_login");
+        LOGI(LogModule::Tcp, "ID_KICK_NOTIFY received reason={}", reason.toStdString());
+
+        // 停止心跳并断开连接
+        HeartBeatMgr::getInstance().stop();
+        if (_socket.state() != QAbstractSocket::UnconnectedState)
+        {
+            _socket.abort();
+        }
+
+        // 清理本地状态并通知 UI 切换到登录界面
+        UserMgr::getInstance().clearSession();
+        emit sig_kicked_by_other(reason);
+    });
 }
 
 void TcpMgr::requestChatHistory(int peer_uid, qint64 before_id, int limit)
@@ -577,6 +605,14 @@ void TcpMgr::registerHandler(ReqId id, std::function<void(ReqId id, int len, QBy
 void TcpMgr::slot_tcp_connect(ServerInfo si)
 {
     HeartBeatMgr::getInstance().stop();
+
+    // 若已存在连接，先断开，避免旧 socket 影响新登录
+    if (_socket.state() != QAbstractSocket::UnconnectedState)
+    {
+        LOGI(LogModule::Tcp, "disconnecting old socket before reconnect");
+        _socket.abort();
+    }
+
     _host = si.host;
     _port = static_cast<uint16_t>(si.port.toInt());
     LOGI(LogModule::Tcp, "connecting to {}:{}", _host.toStdString(), _port);

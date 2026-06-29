@@ -1,7 +1,10 @@
 #include "SelfInfomation.h"
+#include "ConfigMgr.h"
 #include "HeartBeatMgr.h"
+#include "HttpMgr.h"
 #include "TcpMgr.h"
 #include "UserMgr.h"
+#include "global.h"
 #include "ui_SelfInfomation.h"
 
 SelfInfomation::SelfInfomation(QWidget *parent) :
@@ -37,8 +40,24 @@ SelfInfomation::~SelfInfomation()
 
 void SelfInfomation::on_quit_login_btn_clicked()
 {
+    int uid = UserMgr::getInstance().getUid();
+    LOGI(LogModule::Ui, "quit login clicked uid={}", uid);
+
+    // 1. 通知 GateServer 后端清理会话与 Redis 数据
+    if (uid > 0)
+    {
+        QJsonObject json_obj;
+        json_obj["uid"] = uid;
+        HttpMgr::getInstance().postHttpReq(
+            QUrl(ConfigMgr::getInstance().getUrlPrefix() + "/user_logout"), json_obj,
+            ReqId::ID_LOGOUT_USER, Modules::LOGINMOD);
+    }
+
+    // 2. 停止心跳并断开 TCP 连接
     HeartBeatMgr::getInstance().stop();
     TcpMgr::getInstance().slot_heartbeat_abort();
+
+    // 3. 清理本地状态并切换回登录界面
     UserMgr::getInstance().clearSession();
     emit sig_switch_login();
 }

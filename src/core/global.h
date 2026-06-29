@@ -28,6 +28,7 @@ enum ReqId
     ID_REG_USER = 1002,        // 注册用户
     ID_RESET_PWD = 1003,       // 重置密码
     ID_LOGIN_USER = 1004,      // 登录用户
+    ID_LOGOUT_USER = 1005,     // 登出用户
     ID_CHAT_LOGIN = 2001,      // 聊天登录
     ID_CHAT_LOGIN_RSP = 2002,  // 聊天登录响应
     ID_SEARCH_USER_REQ = 2003, // 搜索用户请求
@@ -49,6 +50,7 @@ enum ReqId
     ID_IMAGE_CHAT_MSG_REQ = 2019,        // 图片聊天消息请求
     ID_IMAGE_CHAT_MSG_RSP = 2020,        // 图片聊天消息响应
     ID_NOTIFY_IMAGE_CHAT_MSG_REQ = 2021, // 通知图片聊天消息请求
+    ID_KICK_NOTIFY = 2022,               // 被踢通知
     ID_HEARTBEAT_PING = 3001, // 心跳ping
     ID_HEARTBEAT_PONG = 3002, // 心跳pong
 };
