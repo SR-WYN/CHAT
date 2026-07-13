@@ -43,6 +43,7 @@ public:
     void updateContactLoadedCount();
     bool isLoadContactFinish();
     void appendFriendChatMsg(int uid, const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
+    void updateFriendChatMsgUrl(int friend_id, const QString &msg_id, const QString &url);
     void setFriendChatHistory(int friend_id,
                               const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
     void mergeFriendChatHistory(int friend_id,

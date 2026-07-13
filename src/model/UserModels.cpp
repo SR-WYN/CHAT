@@ -138,6 +138,18 @@ void FriendListEntry::appendChatMsgs(const std::vector<std::shared_ptr<TextChatD
     }
 }
 
+void FriendListEntry::updateChatMsgUrl(const QString &msg_id, const QString &url)
+{
+    for (auto &msg : chat_msgs)
+    {
+        if (msg->_msg_id == msg_id && msg->_msg_type == ChatMsgType::Image)
+        {
+            msg->_url = url;
+            break;
+        }
+    }
+}
+
 void FriendListEntry::setChatMsgs(const std::vector<std::shared_ptr<TextChatData>> &text_vec)
 {
     chat_msgs = text_vec;

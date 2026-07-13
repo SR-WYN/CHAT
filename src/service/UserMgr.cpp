@@ -250,6 +250,19 @@ void UserMgr::appendFriendChatMsg(int friend_id, const std::vector<std::shared_p
          static_cast<int>(msg_vec.size()));
 }
 
+void UserMgr::updateFriendChatMsgUrl(int friend_id, const QString &msg_id, const QString &url)
+{
+    auto find_iter = _friend_map.find(friend_id);
+    if (find_iter == _friend_map.end())
+    {
+        LOGW(LogModule::User, "updateFriendChatMsgUrl friend not found uid={}", friend_id);
+        return;
+    }
+    find_iter.value()->updateChatMsgUrl(msg_id, url);
+    LOGD(LogModule::User, "updateFriendChatMsgUrl uid={} msgid={} url={}", friend_id,
+         msg_id.toStdString(), url.toStdString());
+}
+
 void UserMgr::setFriendChatHistory(int friend_id,
                                    const std::vector<std::shared_ptr<TextChatData>> &msg_vec)
 {

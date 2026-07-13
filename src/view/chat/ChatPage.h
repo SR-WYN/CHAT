@@ -19,6 +19,13 @@ class PictureBubble;
 struct FriendListEntry;
 struct TextChatData;
 
+/// FileServer Token 请求用途（用于区分 upload/download 的响应）
+enum class FileTransferMode
+{
+    Upload,
+    Download
+};
+
 class ChatPage : public QWidget
 {
     Q_OBJECT
@@ -51,12 +58,22 @@ private:
     QVector<QString> _pending_image_paths;
     // 上传完成后是否已发送图片消息
     bool _uploading_images = false;
+    // 当前上传批次的目标好友 uid（切换好友后避免发到错误对象）
+    int _upload_target_uid = 0;
 
     // 等待异步下载完成的图片气泡：URL -> bubble 列表
     QMap<QString, QList<PictureBubble *>> _image_bubbles;
 
     // 等待异步下载的图片 URL 队列
     QQueue<QString> _pending_download_urls;
+    // 是否正在批量下载图片（防止并发请求文件 Token）
+    bool _downloading_images = false;
+
+    // 待上传图片本地路径 -> msgid，上传完成后用于更新聊天记录中的 URL
+    QMap<QString, QString> _pending_image_msg_ids;
+
+    // 待处理的 FileServer Token 响应用途队列（与请求顺序一一对应）
+    QQueue<FileTransferMode> _pending_file_transfer_modes;
 
 private slots:
     void on_send_btn_clicked();

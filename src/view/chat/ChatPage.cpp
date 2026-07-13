@@ -145,11 +145,13 @@ PictureBubble *ChatPage::appendImageBubble(const QString &image_source, ChatRole
 
 void ChatPage::startImageDownload()
 {
-    if (_pending_download_urls.isEmpty())
+    if (_pending_download_urls.isEmpty() || _downloading_images)
     {
         return;
     }
     LOGI(LogModule::Ui, "startImageDownload count={}", _pending_download_urls.size());
+    _downloading_images = true;
+    _pending_file_transfer_modes.enqueue(FileTransferMode::Download);
     TcpMgr::getInstance().requestFileServer(UserMgr::getInstance().getUid());
 }
 
@@ -214,8 +216,16 @@ void ChatPage::on_send_btn_clicked()
 
         if (type == QStringLiteral("image"))
         {
-            image_paths.append(msgList[i].content);
-            appendImageBubble(msgList[i].content, ChatRole::SELF);
+            const QString local_path = msgList[i].content;
+            QUuid uuid = QUuid::createUuid();
+            QString uuid_string = uuid.toString();
+            image_paths.append(local_path);
+            _pending_image_msg_ids[local_path] = uuid_string;
+
+            auto img_msg = std::make_shared<TextChatData>(
+                uuid_string, QString(), self_info->uid, peer_info->uid(), ChatMsgType::Image,
+                local_path);
+            emit sig_append_send_chat_msg(img_msg);
             continue;
         }
 
@@ -255,55 +265,85 @@ void ChatPage::sendImageBatch(const QVector<QString> &local_paths)
     _pending_image_paths = local_paths;
     _uploading_images = true;
     LOGI(LogModule::Ui, "sendImageBatch start count={}", local_paths.size());
+    _pending_file_transfer_modes.enqueue(FileTransferMode::Upload);
     TcpMgr::getInstance().requestFileServer(UserMgr::getInstance().getUid());
 }
 
 void ChatPage::onFileTransferRsp(int err, QString host, QString port, QString token)
 {
+    if (_pending_file_transfer_modes.isEmpty())
+    {
+        LOGW(LogModule::Ui, "onFileTransferRsp no pending mode");
+        return;
+    }
+    const FileTransferMode mode = _pending_file_transfer_modes.dequeue();
+
     if (err != ErrorCodes::SUCCESS)
     {
-        LOGE(LogModule::Ui, "onFileTransferRsp error={}", err);
-        _uploading_images = false;
-        _pending_image_paths.clear();
-        _pending_download_urls.clear();
+        LOGE(LogModule::Ui, "onFileTransferRsp error={} mode={}", err,
+             static_cast<int>(mode));
+        if (mode == FileTransferMode::Upload)
+        {
+            _uploading_images = false;
+            _pending_image_paths.clear();
+        }
+        else
+        {
+            _downloading_images = false;
+            _pending_download_urls.clear();
+        }
         return;
     }
 
-    // 下载场景优先
-    if (!_pending_download_urls.isEmpty())
+    if (mode == FileTransferMode::Download)
     {
-        LOGI(LogModule::Ui, "onFileTransferRsp download mode host={}:{} count={}",
-             host.toStdString(), port.toStdString(), _pending_download_urls.size());
-        HttpMgr::getInstance().setDownloadAuth(host, port, UserMgr::getInstance().getUid(), token);
-        while (!_pending_download_urls.isEmpty())
+        // 串行下载，全部完成后再通知服务器删除 Token
+        if (!_pending_download_urls.isEmpty())
         {
+            LOGI(LogModule::Ui, "onFileTransferRsp download mode host={}:{} count={}",
+                 host.toStdString(), port.toStdString(), _pending_download_urls.size());
+            HttpMgr::getInstance().setDownloadAuth(host, port, UserMgr::getInstance().getUid(),
+                                                   token);
             HttpMgr::getInstance().downloadImage(_pending_download_urls.dequeue());
         }
-        TcpMgr::getInstance().notifyFileTransferDone(UserMgr::getInstance().getUid());
+        else
+        {
+            LOGW(LogModule::Ui, "onFileTransferRsp download mode but no pending urls");
+            _downloading_images = false;
+            TcpMgr::getInstance().notifyFileTransferDone(UserMgr::getInstance().getUid());
+        }
         return;
     }
 
     // 上传场景
     if (_pending_image_paths.isEmpty())
     {
+        LOGW(LogModule::Ui, "onFileTransferRsp upload mode but no pending paths");
         _uploading_images = false;
         return;
     }
     LOGI(LogModule::Ui, "onFileTransferRsp upload mode host={}:{} token_len={}",
          host.toStdString(), port.toStdString(), token.length());
+    _upload_target_uid = _peer ? _peer->uid() : 0;
+    const QVector<QString> current_upload_paths = _pending_image_paths;
+    _pending_image_paths.clear(); // 发送过程中新选的图片会继续追加到这里
     HttpMgr::getInstance().uploadImages(host, port, UserMgr::getInstance().getUid(), token,
-                                        _pending_image_paths);
+                                        current_upload_paths);
 }
 
 void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &results,
                                      ErrorCodes err)
 {
     auto self_info = UserMgr::getInstance().getSelfProfile();
-    if (!self_info || !_peer)
+    if (!self_info || !_peer || (_upload_target_uid != 0 && _peer->uid() != _upload_target_uid))
     {
-        LOGE(LogModule::Ui, "onImageUploadFinished no self or peer");
+        LOGW(LogModule::Ui,
+             "onImageUploadFinished abandoned: no self/peer or peer switched target={} current={}",
+             _upload_target_uid, _peer ? _peer->uid() : -1);
         _uploading_images = false;
         _pending_image_paths.clear();
+        _pending_image_msg_ids.clear();
+        _upload_target_uid = 0;
         return;
     }
 
@@ -313,6 +353,8 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
              results.size());
         _uploading_images = false;
         _pending_image_paths.clear();
+        _pending_image_msg_ids.clear();
+        _upload_target_uid = 0;
         return;
     }
 
@@ -328,10 +370,24 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
         {
             LOGW(LogModule::Ui, "onImageUploadFinished empty url for path={}",
                  local_path.toStdString());
+            _pending_image_msg_ids.remove(local_path);
             continue;
         }
-        QUuid uuid = QUuid::createUuid();
-        QString uuid_string = uuid.toString();
+        QString uuid_string;
+        auto msg_it = _pending_image_msg_ids.find(local_path);
+        if (msg_it != _pending_image_msg_ids.end())
+        {
+            uuid_string = msg_it.value();
+            _pending_image_msg_ids.erase(msg_it);
+            // 把聊天记录中的本地路径替换为服务器 URL，避免重复追加消息
+            UserMgr::getInstance().updateFriendChatMsgUrl(_peer->uid(), uuid_string, url);
+        }
+        else
+        {
+            QUuid uuid = QUuid::createUuid();
+            uuid_string = uuid.toString();
+        }
+
         QPixmap pix = loadImageScaled(local_path);
         QJsonObject obj;
         obj["msgid"] = uuid_string;
@@ -341,10 +397,6 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
         obj["size"] = QFileInfo(local_path).size();
         obj["filename"] = QFileInfo(local_path).fileName();
         image_array.append(obj);
-
-        auto img_msg = std::make_shared<TextChatData>(
-            uuid_string, QString(), self_info->uid, _peer->uid(), ChatMsgType::Image, url);
-        emit sig_append_send_chat_msg(img_msg);
     }
 
     if (!image_array.isEmpty())
@@ -359,35 +411,56 @@ void ChatPage::onImageUploadFinished(const QVector<QPair<QString, QString>> &res
         emit TcpMgr::getInstance().sig_send_data(ReqId::ID_IMAGE_CHAT_MSG_REQ, json_data);
     }
 
-    TcpMgr::getInstance().notifyFileTransferDone(self_info->uid);
-
-    _uploading_images = false;
-    _pending_image_paths.clear();
+    if (!_pending_image_paths.isEmpty())
+    {
+        // 发送过程中又选中了新图片，继续上传下一批
+        LOGI(LogModule::Ui, "onImageUploadFinished continue next batch count={}",
+             _pending_image_paths.size());
+        _pending_file_transfer_modes.enqueue(FileTransferMode::Upload);
+        TcpMgr::getInstance().requestFileServer(UserMgr::getInstance().getUid());
+    }
+    else
+    {
+        TcpMgr::getInstance().notifyFileTransferDone(self_info->uid);
+        _uploading_images = false;
+        _upload_target_uid = 0;
+    }
 }
 
 void ChatPage::onImageDownloadFinished(const QString &url, const QPixmap &pixmap)
 {
     auto it = _image_bubbles.find(url);
-    if (it == _image_bubbles.end())
+    if (it != _image_bubbles.end())
     {
-        return;
-    }
-    if (pixmap.isNull())
-    {
-        LOGE(LogModule::Ui, "onImageDownloadFailed url={}", url.toStdString());
-        _image_bubbles.erase(it);
-        return;
-    }
-    LOGI(LogModule::Ui, "onImageDownloadFinished url={} size={}x{}", url.toStdString(),
-         pixmap.width(), pixmap.height());
-    for (PictureBubble *bubble : it.value())
-    {
-        if (bubble)
+        if (pixmap.isNull())
         {
-            bubble->setImage(pixmap);
+            LOGE(LogModule::Ui, "onImageDownloadFailed url={}", url.toStdString());
         }
+        else
+        {
+            LOGI(LogModule::Ui, "onImageDownloadFinished url={} size={}x{}", url.toStdString(),
+                 pixmap.width(), pixmap.height());
+            for (PictureBubble *bubble : it.value())
+            {
+                if (bubble)
+                {
+                    bubble->setImage(pixmap);
+                }
+            }
+        }
+        _image_bubbles.erase(it);
     }
-    _image_bubbles.erase(it);
+
+    // 继续下载队列中的下一张图片，全部完成后通知服务端删除 Token
+    if (!_pending_download_urls.isEmpty())
+    {
+        HttpMgr::getInstance().downloadImage(_pending_download_urls.dequeue());
+    }
+    else
+    {
+        _downloading_images = false;
+        TcpMgr::getInstance().notifyFileTransferDone(UserMgr::getInstance().getUid());
+    }
 }
 
 void ChatPage::setFriendEntry(std::shared_ptr<FriendListEntry> peer)
@@ -397,10 +470,24 @@ void ChatPage::setFriendEntry(std::shared_ptr<FriendListEntry> peer)
          _peer->listDisplayName().toStdString());
     ui->title_label->setText(_peer->listDisplayName());
     ui->chat_data_list->removeAllItem();
+
+    // 切换聊天对象时清理异步图片状态，避免旧气泡指针悬空
+    _image_bubbles.clear();
+    _pending_download_urls.clear();
+    _pending_image_paths.clear();
+    _pending_image_msg_ids.clear();
+    _pending_file_transfer_modes.clear();
+    _uploading_images = false;
+    _downloading_images = false;
+    _upload_target_uid = 0;
+
     for (const auto &msg : _peer->chat_msgs)
     {
         appendChatMsg(msg);
     }
+
+    // 历史记录/切换好友后，对未下载的图片统一发起下载
+    startImageDownload();
 }
 
 void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
@@ -421,8 +508,14 @@ void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
         QWidget *pBubble = nullptr;
         if (msg->_msg_type == ChatMsgType::Image)
         {
-            const bool is_local = !msg->_url.startsWith(QStringLiteral("http"), Qt::CaseInsensitive);
-            appendImageBubble(msg->_url, role, is_local);
+            const bool need_download =
+                msg->_url.startsWith(QStringLiteral("http"), Qt::CaseInsensitive) ||
+                msg->_url.startsWith(QStringLiteral("/files/"), Qt::CaseInsensitive);
+            appendImageBubble(msg->_url, role, !need_download);
+            if (need_download)
+            {
+                _pending_download_urls.enqueue(msg->_url);
+            }
         }
         else
         {
@@ -460,8 +553,14 @@ void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
         QWidget *pBubble = nullptr;
         if (msg->_msg_type == ChatMsgType::Image)
         {
-            appendImageBubble(msg->_url, role, false);
-            _pending_download_urls.enqueue(msg->_url);
+            const bool need_download =
+                msg->_url.startsWith(QStringLiteral("http"), Qt::CaseInsensitive) ||
+                msg->_url.startsWith(QStringLiteral("/files/"), Qt::CaseInsensitive);
+            appendImageBubble(msg->_url, role, !need_download);
+            if (need_download)
+            {
+                _pending_download_urls.enqueue(msg->_url);
+            }
         }
         else
         {
