@@ -10,6 +10,11 @@ namespace Ui
 class ApplyFriendPage;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class ApplyFriendPage;
+}
+QT_END_NAMESPACE
 
 struct FriendApplyNotify;
 struct AuthAcceptedPeer;

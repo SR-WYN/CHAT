@@ -11,6 +11,11 @@ namespace Ui
 class ApplyFriendItem;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class ApplyFriendItem;
+}
+QT_END_NAMESPACE
 
 struct PendingFriendApplyRow;
 

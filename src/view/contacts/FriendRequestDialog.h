@@ -11,6 +11,11 @@ namespace Ui
 class FriendRequestDialog;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class FriendRequestDialog;
+}
+QT_END_NAMESPACE
 
 struct UserProfile;
 struct PendingFriendApplyRow;

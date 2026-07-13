@@ -11,6 +11,11 @@ namespace Ui
 class ChatUserWidget;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class ChatUserWidget;
+}
+QT_END_NAMESPACE
 
 struct FriendListEntry;
 struct TextChatData;

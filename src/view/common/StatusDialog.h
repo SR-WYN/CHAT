@@ -10,6 +10,11 @@ namespace Ui
 class StatusDialog;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class StatusDialog;
+}
+QT_END_NAMESPACE
 
 struct UserProfile;
 

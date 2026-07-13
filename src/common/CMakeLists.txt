@@ -1,11 +1,14 @@
-add_library(common INTERFACE)
-
-target_include_directories(common INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants
+add_library(common STATIC
+    utils/utils.cpp
 )
 
-target_link_libraries(common INTERFACE
+target_include_directories(common PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+)
+
+target_link_libraries(common PUBLIC
     Qt6::Core
     Qt6::Widgets
     Qt6::Network

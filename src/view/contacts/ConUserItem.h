@@ -11,6 +11,11 @@ namespace Ui
 class ConUserItem;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class ConUserItem;
+}
+QT_END_NAMESPACE
 
 struct AuthAcceptedPeer;
 struct FriendListEntry;

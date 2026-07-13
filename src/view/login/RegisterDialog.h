@@ -10,6 +10,11 @@ namespace Ui
 class RegisterDialog;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class RegisterDialog;
+}
+QT_END_NAMESPACE
 
 class RegisterDialog : public QDialog
 {

@@ -12,6 +12,11 @@ namespace Ui
 class ChatDialog;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class ChatDialog;
+}
+QT_END_NAMESPACE
 
 struct FriendApplyNotify;
 struct AuthAcceptedPeer;

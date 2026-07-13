@@ -1,6 +1,7 @@
 #include "ConfigMgr.h"
 #include "Log.h"
 #include "LogModule.h"
+#include "utils.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -45,43 +46,6 @@ void ConfigMgr::loadConfig()
     file.close();
 }
 
-namespace
-{
-spdlog::level::level_enum parseLogLevel(const QString &level_str)
-{
-    const QString level = level_str.trimmed().toLower();
-    if (level == QLatin1String("trace"))
-    {
-        return spdlog::level::trace;
-    }
-    if (level == QLatin1String("debug"))
-    {
-        return spdlog::level::debug;
-    }
-    if (level == QLatin1String("info"))
-    {
-        return spdlog::level::info;
-    }
-    if (level == QLatin1String("warn") || level == QLatin1String("warning"))
-    {
-        return spdlog::level::warn;
-    }
-    if (level == QLatin1String("error") || level == QLatin1String("err"))
-    {
-        return spdlog::level::err;
-    }
-    if (level == QLatin1String("critical") || level == QLatin1String("fatal"))
-    {
-        return spdlog::level::critical;
-    }
-    if (level == QLatin1String("off"))
-    {
-        return spdlog::level::off;
-    }
-    return spdlog::level::info;
-}
-} // namespace
-
 void ConfigMgr::loadLog(const QJsonObject &root)
 {
     if (!root.contains("Log") || !root["Log"].isObject())
@@ -99,7 +63,7 @@ void ConfigMgr::loadLog(const QJsonObject &root)
     const QString level = log["Level"].toString();
     if (!level.isEmpty())
     {
-        _log_config._level = parseLogLevel(level);
+        _log_config._level = utils::log::parseLevel(level);
         LOGI(LogModule::Config, "log level set to {}", level.toStdString());
     }
     else

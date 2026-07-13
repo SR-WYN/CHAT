@@ -10,6 +10,11 @@ namespace Ui
 class FriendInfoPage;
 }
 QT_END_NAMESPACE
+namespace Ui
+{
+class FriendInfoPage;
+}
+QT_END_NAMESPACE
 
 struct FriendListEntry;
 
