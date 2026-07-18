@@ -180,7 +180,7 @@ void RegisterDialog::initHttpHandlers()
         if (error != ErrorCodes::SUCCESS)
         {
             LOGE(LogModule::Ui, "get verify code failed error={}", error);
-            showTip(tr("参数错误"), false);
+            showTip(tr("获取验证码失败，错误码为%1").arg(error), false);
             return;
         }
         auto email = jsonObj["email"].toString();
@@ -192,7 +192,7 @@ void RegisterDialog::initHttpHandlers()
         if (error != ErrorCodes::SUCCESS)
         {
             LOGE(LogModule::Ui, "register failed error={}", error);
-            showTip(tr("参数错误"), false);
+            showTip(tr("用户注册失败，错误码为%1").arg(error), false);
             return;
         }
         auto email = jsonObj["email"].toString();
