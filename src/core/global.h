@@ -55,12 +55,17 @@ enum ReqId
     ID_HEARTBEAT_PONG = 3002, // 心跳pong
 };
 
-// 心跳：V1 只用间隔发 Ping；其余供后续未回 Pong 断开、带 ts 负载等 TODO
-constexpr int HEARTBEAT_PING_INTERVAL_MS = 30'000;
+// 心跳：10s 间隔，3 次未收到 Pong 视为超时（30s），触发断线重连
+constexpr int HEARTBEAT_PING_INTERVAL_MS = 10'000;
 constexpr int HEARTBEAT_MAX_MISSED_PONG = 3;
 constexpr int HEARTBEAT_PONG_DEADLINE_MS = HEARTBEAT_PING_INTERVAL_MS * HEARTBEAT_MAX_MISSED_PONG;
 inline constexpr char HEARTBEAT_KEY_TS[] = "ts";
 inline const QString HEARTBEAT_EMPTY_BODY = QStringLiteral("{}");
+
+// 断线重连退避策略
+constexpr int RECONNECT_INITIAL_MS = 1'000;
+constexpr int RECONNECT_MAX_MS = 30'000;
+constexpr int RECONNECT_MULTIPLIER = 2;
 
 enum Modules
 {

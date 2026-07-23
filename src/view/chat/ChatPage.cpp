@@ -577,3 +577,13 @@ void ChatPage::appendChatMsg(std::shared_ptr<TextChatData> msg)
         }
     }
 }
+
+void ChatPage::setInputEnabled(bool enabled)
+{
+    ui->chat_edit->setEnabled(enabled);
+    ui->send_btn->setEnabled(enabled);
+    ui->receive_btn->setEnabled(enabled);
+    ui->emoji_label->setEnabled(enabled);
+    ui->file_label->setEnabled(enabled);
+    LOGI(LogModule::Ui, "ChatPage input enabled={}", enabled);
+}

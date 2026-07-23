@@ -20,6 +20,17 @@ public:
     QString getName() const;
     std::shared_ptr<SelfProfile> getSelfProfile() const;
 
+    // 登录凭据与服务端地址持久化（供断线重连使用）
+    void setLastCredentials(int uid, const QString &token);
+    void setLastServerInfo(const ServerInfo &si);
+    bool hasLastCredentials() const;
+    int lastUid() const;
+    QString lastToken() const;
+    ServerInfo lastServerInfo() const;
+    void clearCredentials();
+
+    // 被踢或 token 失效时清理凭据并保留 lastServerInfo
+
     bool alreadyApply(std::shared_ptr<PendingFriendApplyRow> apply_info);
     bool alreadyApply(int from_uid);
     void addApply(std::shared_ptr<PendingFriendApplyRow> apply_info);
@@ -63,4 +74,9 @@ private:
     std::vector<std::shared_ptr<FriendListEntry>> _friend_list;
     int _chat_loaded;
     int _contact_loaded;
+
+    // 供断线重连复用的凭据与服务端地址
+    int _last_uid{0};
+    QString _last_token;
+    ServerInfo _last_server_info;
 };

@@ -32,6 +32,7 @@ public slots:
     void slot_heartbeat_timeout_back_to_login();
     void slot_self_info_switch_login();
     void slot_switch_self_info();
+    void slot_reconnect_failed_token_expired();
 
 private:
     Ui::MainWindow *_ui;

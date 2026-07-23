@@ -36,6 +36,9 @@ public:
     void setFriendEntry(std::shared_ptr<FriendListEntry> peer);
     void appendChatMsg(std::shared_ptr<TextChatData> msg);
 
+    // 断线重连期间禁用/恢复输入与发送
+    void setInputEnabled(bool enabled);
+
     // 对已入队的待下载 URL 发起下载（先请求 Token，再下载）
     void startImageDownload();
 

@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <qlistwidget.h>
 #include "AnimatedStateWidget.h"
+#include "TcpMgr.h"
 #include "UserData.h"
 
 QT_BEGIN_NAMESPACE
@@ -23,7 +24,6 @@ struct AuthAcceptedPeer;
 struct UserProfile;
 struct FriendListEntry;
 struct TextChatMsg;
-struct ImageChatData;
 struct ImageChatMsg;
 
 class ChatDialog : public QDialog
@@ -50,6 +50,8 @@ private:
     void updateChatMsg(const std::vector<std::shared_ptr<TextChatData>> &msg_vec);
     void refreshChatListFromMemory();
     void refreshChatListItem(int peer_uid);
+    void updateReconnectBar(TcpMgr::ReconnectState state, int next_retry_ms);
+
     Ui::ChatDialog *ui;
     ChatUIMode _mode;
     ChatUIMode _state;
@@ -76,9 +78,11 @@ private slots:
     void slot_text_chat_msg(std::shared_ptr<TextChatMsg> msg_ptr);
     void slot_image_chat_msg(std::shared_ptr<ImageChatMsg> msg_ptr);
     void slot_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
-    void requestChatHistory(int peer_uid);
     void slot_side_head_clicked();
     void slot_back_from_self_info();
+    void requestChatHistory(int peer_uid);
+    void slot_reconnect_state_changed(TcpMgr::ReconnectState state, int next_retry_ms);
+    void slot_reconnect_btn_clicked();
 
 signals:
     void sig_switch_login();

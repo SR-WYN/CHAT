@@ -108,5 +108,5 @@ void HeartBeatMgr::disconnectIfMissedTooMany()
     LOGE(LogModule::Tcp, "heartbeat timeout missed={} threshold={}", _missed_pong_count,
          HEARTBEAT_MAX_MISSED_PONG);
     stop();
-    emit sig_heartbeat_timeout();
+    TcpMgr::getInstance().slot_heartbeat_timeout();
 }

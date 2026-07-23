@@ -118,6 +118,13 @@ ChatDialog::ChatDialog(QWidget *parent)
 
     connect(ui->side_head_label, &AnimatedStateWidget::clicked, this, &ChatDialog::slot_side_head_clicked);
 
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_reconnect_state_changed, this,
+            &ChatDialog::slot_reconnect_state_changed);
+    connect(ui->reconnect_btn, &QPushButton::clicked, this, &ChatDialog::slot_reconnect_btn_clicked);
+
+    // 初始化状态条为已登录状态
+    updateReconnectBar(TcpMgr::getInstance().reconnectState(), 0);
+
     LOGI(LogModule::Ui, "ChatDialog initialized");
 }
 
@@ -753,4 +760,51 @@ void ChatDialog::slot_side_head_clicked()
 void ChatDialog::slot_back_from_self_info()
 {
     this->show();
+}
+
+void ChatDialog::updateReconnectBar(TcpMgr::ReconnectState state, int next_retry_ms)
+{
+    switch (state)
+    {
+    case TcpMgr::ReconnectState::LoggedIn:
+        ui->reconnect_bar->hide();
+        ui->chat_page->setInputEnabled(true);
+        break;
+    case TcpMgr::ReconnectState::Connecting:
+        ui->reconnect_bar->show();
+        ui->reconnect_label->setText(tr("正在连接服务器..."));
+        ui->reconnect_btn->setEnabled(false);
+        ui->chat_page->setInputEnabled(false);
+        break;
+    case TcpMgr::ReconnectState::Backoff:
+        ui->reconnect_bar->show();
+        ui->reconnect_label->setText(
+            tr("连接已断开，%1 秒后自动重连").arg(next_retry_ms / 1000));
+        ui->reconnect_btn->setEnabled(true);
+        ui->chat_page->setInputEnabled(false);
+        break;
+    case TcpMgr::ReconnectState::Idle:
+    default:
+        ui->reconnect_bar->hide();
+        ui->chat_page->setInputEnabled(true);
+        break;
+    }
+}
+
+void ChatDialog::slot_reconnect_state_changed(TcpMgr::ReconnectState state, int next_retry_ms)
+{
+    LOGI(LogModule::Ui, "reconnect state changed state={} next_retry_ms={}",
+         static_cast<int>(state), next_retry_ms);
+    updateReconnectBar(state, next_retry_ms);
+}
+
+void ChatDialog::slot_reconnect_btn_clicked()
+{
+    LOGI(LogModule::Ui, "user requested manual reconnect");
+    ui->reconnect_btn->setEnabled(false);
+    TcpMgr &tcp = TcpMgr::getInstance();
+    if (tcp.reconnectState() == TcpMgr::ReconnectState::Backoff)
+    {
+        tcp.slot_heartbeat_timeout();
+    }
 }

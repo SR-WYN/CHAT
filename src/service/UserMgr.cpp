@@ -20,6 +20,49 @@ void UserMgr::setToken(const QString &token)
     LOGI(LogModule::User, "UserMgr setToken len={}", token.length());
 }
 
+void UserMgr::setLastCredentials(int uid, const QString &token)
+{
+    _last_uid = uid;
+    _last_token = token;
+    LOGI(LogModule::User, "UserMgr setLastCredentials uid={} token_len={}", uid,
+         token.length());
+}
+
+void UserMgr::setLastServerInfo(const ServerInfo &si)
+{
+    _last_server_info = si;
+    LOGI(LogModule::User, "UserMgr setLastServerInfo host={}:{} uid={}",
+         si.host.toStdString(), si.port.toStdString(), si.uid);
+}
+
+bool UserMgr::hasLastCredentials() const
+{
+    return _last_uid > 0 && !_last_token.isEmpty();
+}
+
+int UserMgr::lastUid() const
+{
+    return _last_uid;
+}
+
+QString UserMgr::lastToken() const
+{
+    return _last_token;
+}
+
+ServerInfo UserMgr::lastServerInfo() const
+{
+    return _last_server_info;
+}
+
+void UserMgr::clearCredentials()
+{
+    LOGI(LogModule::User, "UserMgr clearCredentials uid={}", _last_uid);
+    _last_uid = 0;
+    _last_token.clear();
+    // _last_server_info 保留，便于用户重新登录前仍知道上次节点
+}
+
 int UserMgr::getUid() const
 {
     return _self_profile ? _self_profile->uid : 0;

@@ -2,10 +2,10 @@
 #include "SearchList.h"
 #include "Singleton.h"
 #include "UserData.h"
-#include <functional>
 #include <QByteArray>
 #include <QObject>
 #include <QTcpSocket>
+#include <QTimer>
 #include <qobject.h>
 
 class TextChatMsg;
@@ -20,12 +20,36 @@ class TcpMgr : public QObject, public Singleton<TcpMgr>
     friend class Singleton<TcpMgr>;
 
 public:
+    enum class ReconnectState
+    {
+        Idle,
+        Connecting,
+        Backoff,
+        LoggedIn
+    };
+
     ~TcpMgr() override;
 
 private:
     TcpMgr();
     void initHandlers();
     void handleMsg(ReqId id, int len, QByteArray data);
+
+    void onSocketDisconnected();
+    void onSocketError(QAbstractSocket::SocketError error);
+    void onConnected();
+    void onLoginSuccess(const QJsonObject &json_obj);
+    void onLoginFailed(int err);
+
+    void enterState(ReconnectState state);
+    void startReconnect();
+    void doConnect();
+    int nextBackoffMs() const;
+    bool isTokenError(int err) const;
+    void sendCachedLogin();
+    void cacheLogin(const ServerInfo &si);
+    void processPendingSendQueue();
+
     QTcpSocket _socket;
     QString _host;
     uint16_t _port;
@@ -35,10 +59,19 @@ private:
     quint16 _message_len;
     QMap<ReqId, std::function<void(ReqId id, int len, QByteArray data)>> _handlers;
 
+    ReconnectState _reconnect_state{ReconnectState::Idle};
+    int _reconnect_attempt{0};
+    QTimer _reconnect_timer;
+    ServerInfo _cached_server_info;
+    bool _is_reconnect_login{false};
+    bool _pending_disconnect_is_reconnect{false};
+    std::vector<std::pair<ReqId, QString>> _pending_send_queue;
+
 public slots:
-    void slot_tcp_connect(ServerInfo);
+    void slot_tcp_connect(ServerInfo si);
     bool slot_send_data(ReqId reqId, QString data);
     void slot_heartbeat_abort();
+    void slot_heartbeat_timeout();
 
 public:
     void registerHandler(
@@ -48,6 +81,7 @@ public:
     void requestAllFriendsChatHistory();
     void requestFileServer(int uid);
     void notifyFileTransferDone(int uid);
+    ReconnectState reconnectState() const;
 
 signals:
     void sig_con_success(bool bsuccess);
@@ -64,4 +98,6 @@ signals:
     void sig_image_chat_msg(std::shared_ptr<ImageChatMsg> msg_ptr);
     void sig_chat_history(int peer_uid, std::vector<std::shared_ptr<TextChatData>> msgs);
     void sig_file_transfer_rsp(int err, QString host, QString port, QString token);
+    void sig_reconnect_state_changed(TcpMgr::ReconnectState state, int next_retry_ms);
+    void sig_reconnect_failed_token_expired();
 };

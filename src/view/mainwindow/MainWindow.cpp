@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), _ui(new Ui::MainW
             &MainWindow::slot_self_info_switch_login, Qt::QueuedConnection);
     connect(&HeartBeatMgr::getInstance(), &HeartBeatMgr::sig_heartbeat_timeout, this,
             &MainWindow::slot_heartbeat_timeout_back_to_login, Qt::QueuedConnection);
+    connect(TcpMgr::getInstancePtr(), &TcpMgr::sig_reconnect_failed_token_expired, this,
+            &MainWindow::slot_reconnect_failed_token_expired, Qt::QueuedConnection);
 }
 
 void MainWindow::slot_switch_self_info()
@@ -165,6 +167,31 @@ void MainWindow::slot_heartbeat_timeout_back_to_login()
     LOGW(LogModule::Ui, "heartbeat timeout, back to login");
     QMessageBox::warning(this, tr("连接已断开"), tr("与服务器的心跳超时，请重新登录。"));
     UserMgr::getInstance().clearSession();
+    if (_chat_dlg != nullptr)
+    {
+        _chat_dlg->hide();
+        _chat_dlg->deleteLater();
+        _chat_dlg = nullptr;
+    }
+    _login_dlg = new LoginDialog(this);
+    _login_dlg->setWindowFlags(Qt::CustomizeWindowHint | Qt::FramelessWindowHint);
+    setCentralWidget(_login_dlg);
+    _login_dlg->show();
+    connect(_login_dlg, &LoginDialog::sig_login_switch_register, this,
+            &MainWindow::slot_login_dlg_switch_register);
+    connect(_login_dlg, &LoginDialog::sig_login_switch_reset, this,
+            &MainWindow::slot_login_dlg_switch_reset);
+    this->setMinimumSize(300, 500);
+    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    this->resize(500, 800);
+}
+
+void MainWindow::slot_reconnect_failed_token_expired()
+{
+    LOGW(LogModule::Ui, "reconnect token expired, back to login");
+    QMessageBox::warning(this, tr("登录已过期"), tr("长时间未登录或已在其他设备登录，请重新登录。"));
+    UserMgr::getInstance().clearSession();
+    UserMgr::getInstance().clearCredentials();
     if (_chat_dlg != nullptr)
     {
         _chat_dlg->hide();

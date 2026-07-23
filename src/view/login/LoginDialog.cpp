@@ -5,6 +5,7 @@
 #include "Log.h"
 #include "LogModule.h"
 #include "TcpMgr.h"
+#include "UserMgr.h"
 #include "global.h"
 #include "ui_LoginDialog.h"
 #include <qdebug.h>
@@ -85,6 +86,10 @@ void LoginDialog::initHttpHandlers()
         _token = si.token;
         LOGI(LogModule::Ui, "login http success uid={} chat_server={}:{} token_len={}", si.uid,
              si.host.toStdString(), si.port.toStdString(), si.token.length());
+
+        // 持久化凭据与服务端地址，供断线重连使用
+        UserMgr::getInstance().setLastCredentials(si.uid, si.token);
+        UserMgr::getInstance().setLastServerInfo(si);
 
         emit sig_login_connect_tcp(si);
     });
