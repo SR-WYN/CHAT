@@ -37,7 +37,8 @@ void UserMgr::setLastServerInfo(const ServerInfo &si)
 
 bool UserMgr::hasLastCredentials() const
 {
-    return _last_uid > 0 && !_last_token.isEmpty();
+    // token-only 登录：重连只需 token，uid 由服务端解析
+    return !_last_token.isEmpty();
 }
 
 int UserMgr::lastUid() const

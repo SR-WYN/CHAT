@@ -236,14 +236,12 @@ void LoginDialog::slot_tcp_con_success(bool bsuccess)
     {
         showTip(tr("聊天服务连接成功，正在登陆..."), true);
         QJsonObject json_obj;
-        json_obj["uid"] = _uid;
         json_obj["token"] = _token;
 
         QJsonDocument doc(json_obj);
         QString json_string = doc.toJson(QJsonDocument::Indented);
 
-        LOGI(LogModule::Ui, "tcp connected, sending chat login uid={} token_len={}", _uid,
-             _token.length());
+        LOGI(LogModule::Ui, "tcp connected, sending chat login token_len={}", _token.length());
         emit TcpMgr::getInstance().sig_send_data(ReqId::ID_CHAT_LOGIN, json_string);
     }
     else

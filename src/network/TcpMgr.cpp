@@ -648,12 +648,11 @@ void TcpMgr::cacheLogin(const ServerInfo &si)
 void TcpMgr::sendCachedLogin()
 {
     QJsonObject json_obj;
-    json_obj["uid"] = _cached_server_info.uid;
     json_obj["token"] = _cached_server_info.token;
     QJsonDocument doc(json_obj);
     QString json_string = doc.toJson(QJsonDocument::Indented);
-    LOGI(LogModule::Tcp, "sending cached login uid={} token_len={} reconnect={}",
-         _cached_server_info.uid, _cached_server_info.token.length(), _is_reconnect_login);
+    LOGI(LogModule::Tcp, "sending cached login token_len={} reconnect={}",
+         _cached_server_info.token.length(), _is_reconnect_login);
     slot_send_data(ReqId::ID_CHAT_LOGIN, json_string);
 }
 
@@ -829,7 +828,6 @@ void TcpMgr::startReconnect()
 
     if (_cached_server_info.token.isEmpty())
     {
-        _cached_server_info.uid = UserMgr::getInstance().lastUid();
         _cached_server_info.token = UserMgr::getInstance().lastToken();
         ServerInfo last = UserMgr::getInstance().lastServerInfo();
         _cached_server_info.host = last.host;
